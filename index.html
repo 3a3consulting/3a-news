@@ -1,0 +1,503 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>3A Versicherungs-News</title>
+<!-- Web-App: 3A-Symbol auf dem Startbildschirm, Vollbild ohne Browserleiste -->
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
+<link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+<meta name="theme-color" content="#D21927">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="3A News">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<!-- Datenschutz: keine externen Schriften (kein Google Fonts), nur Systemschriften -->
+<style>
+/* Gestaltung nach dem 3A-PowerPoint-Master: rote Überschriften, graue Flächen, nummerierte Kacheln, Chevron-Pfeile für Rubriken, „3A“-Marke unten links.
+   Layout: wie die erste Dashboard-Variante – rote Kopfleiste mit Logo und Reitern, links eine graue Filterspalte
+   (Ausgabe, Suche, Sparten, Themen, Unternehmen), rechts drei Top-Themen nebeneinander und darunter die weiteren Meldungen.
+   3A-Farben, Rot als einzige laute Farbe, Petrol für Ordnungselemente; bewusst nur helles Erscheinungsbild. */
+:root{
+  --red:#D21927; --red-dark:#850F1B; --petrol:#0F4C64; --mustard:#F4B637;
+  --white:#FFFFFF; --grey:#F0F0F0; --grey-2:#E4E6E8; --ink:#1A1A1A; --muted:#5B6267; --line:#DADDE0;
+  --f:"Aptos Display","Aptos","Segoe UI",system-ui,-apple-system,Roboto,Arial,sans-serif;
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{margin:0}
+body{background:var(--white);color:var(--ink);font-family:var(--f);font-size:15px;line-height:1.5;padding-block:0 40px;-webkit-font-smoothing:antialiased}
+a{color:inherit}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--petrol);outline-offset:2px}
+.inner{max-width:1320px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+
+/* Kopfleiste */
+.band{background:var(--red);color:var(--white)}
+.band .inner{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:14px 24px;padding-block:18px}
+.brand{display:flex;align-items:center;gap:18px;min-width:0}
+.logo{height:44px;width:auto;flex:none}
+.brand-text{display:flex;flex-direction:column;gap:2px;border-left:1px solid rgba(255,255,255,.55);padding-left:18px;min-width:0}
+.eyebrow{font-size:12px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;opacity:.92}
+.brand h1{margin:0;font-weight:700;font-size:clamp(22px,3.2vw,30px);line-height:1.1}
+.stats{display:flex;flex-wrap:wrap;gap:4px 16px;font-size:13px;opacity:.95}
+.stat b{font-weight:700;font-variant-numeric:tabular-nums}
+.stat span{margin-left:4px}
+.funnel-line{font-size:14px;line-height:1.45;opacity:.97}
+.funnel-line b{font-weight:700;font-variant-numeric:tabular-nums}
+.howbtn{background:none;border:0;padding:0;margin-left:6px;color:inherit;font:inherit;font-weight:600;text-decoration:underline;text-underline-offset:3px;cursor:pointer;white-space:nowrap}
+.howbtn:focus-visible{outline:2px solid #fff;outline-offset:2px}
+dialog.how{border:0;padding:0;max-width:760px;width:calc(100% - 32px);max-height:calc(100% - 48px);box-shadow:0 18px 50px rgba(0,0,0,.25);color:var(--ink)}
+dialog.how::backdrop{background:rgba(26,26,26,.45)}
+.how-head{background:var(--red);color:#fff;padding:18px 24px;display:flex;justify-content:space-between;align-items:flex-start;gap:16px}
+.how-head h2{margin:2px 0 0;font-size:22px}
+.how-head .x{background:none;border:0;color:#fff;font-size:26px;line-height:1;cursor:pointer;padding:0 4px}
+.how-body{padding:20px 24px 24px}
+.how-body h3{color:var(--red);font-size:16px;margin:22px 0 8px}
+.flow{display:grid;grid-template-columns:1fr auto 1fr auto 1fr;align-items:stretch;gap:8px}
+.flow .st{background:var(--grey);padding:14px 12px;text-align:center}
+.flow .st b{display:block;font-size:30px;line-height:1.1;color:var(--petrol);font-variant-numeric:tabular-nums}
+.flow .st:last-child b{color:var(--red)}
+.flow .st span{display:block;font-size:13px;margin-top:4px}
+.flow .ar{align-self:center;color:var(--muted);font-size:20px}
+@media (max-width:560px){.flow{grid-template-columns:1fr}.flow .ar{transform:rotate(90deg);justify-self:center}}
+.how-body ul.rules{margin:0;padding-left:18px}.how-body ul.rules li{margin:3px 0}
+.qgroup{margin:10px 0 0}.qgroup p{margin:0 0 6px;font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--petrol)}
+.qchips{display:flex;flex-wrap:wrap;gap:6px}
+.qchip{border:1px solid var(--line);padding:3px 9px;font-size:13px;background:#fff}
+.qchip.heute{border-color:var(--petrol);background:var(--petrol);color:#fff}
+.how-note{font-size:13px;color:var(--muted);margin-top:16px}
+.tabs{display:flex;gap:2px;border:1px solid rgba(255,255,255,.7);padding:3px;max-width:100%;overflow-x:auto;scrollbar-width:none}
+.tabs button{border:0;background:none;padding:6px 14px;cursor:pointer;font-weight:500;color:var(--white);white-space:nowrap}
+.tabs button[aria-pressed="true"]{background:var(--white);color:var(--red)}
+
+/* Raster */
+.page{display:grid;grid-template-columns:260px minmax(0,1fr);gap:28px;align-items:start;padding-block:24px 0}
+@media (max-width:860px){.page{grid-template-columns:minmax(0,1fr);gap:18px}}
+.fwrap{min-width:0;position:sticky;top:calc(env(safe-area-inset-top,0px) + 16px)}
+.fsum{display:none}
+aside.filters{display:flex;flex-direction:column;gap:18px;background:var(--grey);padding:16px}
+@media (max-width:860px){
+  .fwrap{position:static}
+  .fsum{display:flex;width:100%;border:0;align-items:center;justify-content:space-between;cursor:pointer;font-weight:600;padding:10px 14px;background:var(--grey);text-align:left}
+  .fsum::after{content:"+";font-size:18px;color:var(--red)}
+  .fwrap.open .fsum::after{content:"−"}
+  .fwrap:not(.open) aside.filters{display:none}
+  .fwrap.open aside.filters{padding-top:4px}
+}
+.fgroup{display:flex;flex-direction:column;gap:8px}
+.flabel{margin:0;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--red);display:flex;justify-content:space-between;gap:8px}
+.flabel button{border:0;background:none;padding:0;color:var(--red);cursor:pointer;font-weight:500;text-transform:none;letter-spacing:0}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{border:1px solid var(--line);background:var(--white);padding:3px 9px;font-size:13px;cursor:pointer;line-height:1.4}
+.chip:hover{border-color:var(--petrol)}
+.chip[aria-pressed="true"]{background:var(--petrol);border-color:var(--petrol);color:var(--white)}
+.field{width:100%;border:1px solid var(--line);background:var(--white);padding:8px 10px}
+select.field{cursor:pointer}
+.hint{font-size:12.5px;color:var(--muted);margin:0}
+
+main{display:flex;flex-direction:column;gap:26px;min-width:0}
+section{display:flex;flex-direction:column;gap:14px}
+.sechead{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:6px 16px;border-bottom:1px solid var(--line);padding-bottom:8px}
+.sechead h2{margin:0;font-weight:700;font-size:24px;color:var(--red);letter-spacing:-.01em}
+.meta{font-size:12.5px;color:var(--muted);font-variant-numeric:tabular-nums}
+
+/* Top-Themen nebeneinander */
+.tops{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;counter-reset:top;padding-top:14px}
+@media (max-width:760px){.tops{grid-template-columns:minmax(0,1fr)}}
+.topcard{position:relative;background:var(--grey);padding:30px 18px 18px;display:flex;flex-direction:column;gap:8px;min-width:0}
+.topcard::before{counter-increment:top;content:counter(top);position:absolute;top:-14px;left:18px;width:32px;height:32px;display:grid;place-items:center;background:var(--red);color:var(--white);font-weight:700;font-size:17px}
+.topcard:nth-child(2)::before{background:var(--petrol)}
+.topcard:nth-child(3)::before{background:#5FB7A6}
+.topcard .kicker{display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--petrol)}
+.tag-chev{display:none}
+.topcard h3{margin:0;font-weight:700;font-size:18px;line-height:1.25;overflow-wrap:break-word;hyphens:auto}
+.topcard h3 a,.item h4 a{text-decoration:none}
+.topcard h3 a:hover,.item h4 a:hover{text-decoration:underline;text-decoration-color:var(--red)}
+.topcard p{margin:0;font-size:14px}
+.topcard.read{opacity:.6}
+.topcard.read:hover{opacity:1}
+
+/* Weitere Meldungen */
+.fbar{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px 16px;background:#FDECEE;border:1px solid #F3B9BE;padding:10px 14px;font-size:14px}
+.fbar b{color:var(--red-dark)}
+.jump{display:flex;flex-wrap:wrap;gap:6px}
+.jump a{text-decoration:none;font-size:13px;background:var(--grey);padding:4px 22px 4px 10px;clip-path:polygon(0 0,calc(100% - 10px) 0,100% 50%,calc(100% - 10px) 100%,0 100%)}
+.jump a:hover{background:var(--grey-2)}
+.jump b{color:var(--red);margin-left:4px;font-variant-numeric:tabular-nums}
+.block{gap:0;scroll-margin-top:16px}
+.block>h3{align-self:flex-start;margin:10px 0 4px;font-weight:600;font-size:12.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--white);background:var(--petrol);padding:5px 26px 5px 12px;clip-path:polygon(0 0,calc(100% - 14px) 0,100% 50%,calc(100% - 14px) 100%,0 100%)}
+.item{display:grid;grid-template-columns:minmax(0,1fr);gap:4px;padding:12px 0;border-bottom:1px solid var(--line)}
+.item h4{margin:0;font-weight:600;font-size:15.5px;line-height:1.35;overflow-wrap:break-word;hyphens:auto}
+.item p{margin:0;max-width:80ch}
+.item.read h4,.item.read p{color:var(--muted)}
+.item.read h4{font-weight:500}
+.tags{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;font-size:12.5px;color:var(--muted)}
+.src{font-weight:500;color:var(--ink);font-variant-numeric:tabular-nums}
+.tag{background:var(--grey);color:var(--petrol);padding:1px 7px;font-weight:500}
+.firm{border:1px solid var(--line);padding:0 7px;background:var(--white);cursor:pointer;font-size:12.5px}
+.firm:hover{border-color:var(--red);color:var(--red)}
+.also{font-size:12.5px;color:var(--muted)}
+.also a{color:var(--muted)}
+.rmark{border:0;background:none;padding:0;color:var(--muted);font-size:12.5px;cursor:pointer;text-decoration:underline;text-decoration-color:var(--line);text-underline-offset:3px}
+.rmark:hover{color:var(--ink)}
+.item .rmark{order:9;margin-left:auto}
+.rlink{order:10;border:0;background:none;padding:0;margin-left:12px;color:var(--red);font-size:12.5px;font-weight:600;cursor:pointer}
+.rlink:hover{text-decoration:underline;text-underline-offset:3px}
+.unread{color:var(--red);font-weight:700}
+.empty{background:var(--grey);padding:28px;display:flex;flex-direction:column;gap:6px}
+.empty h3{margin:0;font-size:18px;font-weight:600}
+.empty p{margin:0;color:var(--muted)}
+footer{font-size:12.5px;color:var(--muted);border-top:1px solid var(--line);padding-top:12px;display:flex;flex-direction:column;gap:4px;margin-top:32px;position:relative;padding-left:52px}
+footer::before{content:"3A";position:absolute;left:0;top:14px;background:var(--red);color:var(--white);font-weight:800;font-size:12px;padding:2px 12px 2px 6px;clip-path:polygon(0 0,75% 0,100% 50%,75% 100%,0 100%)}
+.warnline{color:var(--red-dark)}
+
+/* Recherche */
+.rzone{display:flex;flex-direction:column;gap:8px;margin-top:4px}
+.rbtn{align-self:flex-start;border:1px solid var(--red);background:var(--white);color:var(--red);padding:3px 10px;font-size:13px;font-weight:500;cursor:pointer}
+.rbtn:hover{background:var(--red);color:var(--white)}
+.rbtn.ghost{border-color:var(--line);color:var(--muted)}
+.rbtn.ghost:hover{background:var(--grey);color:var(--ink)}
+.rform{background:var(--grey);padding:12px;display:flex;flex-direction:column;gap:8px}
+.topcard .rform{background:var(--white)}
+.rform label{font-size:13px;font-weight:600;color:var(--petrol)}
+.rform textarea{width:100%;min-height:64px;border:1px solid var(--line);background:var(--white);padding:8px;resize:vertical}
+.rrow{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.rstatus{font-size:13px;color:var(--petrol);display:flex;align-items:center;gap:8px}
+.rstatus::before{content:"";width:8px;height:8px;background:var(--mustard);flex:none}
+@media (prefers-reduced-motion:no-preference){.rstatus.run::before{animation:pulse 1.2s ease-in-out infinite}@keyframes pulse{50%{opacity:.25}}}
+.rmsg{font-size:13px;color:var(--red-dark)}
+.dossier{border-left:3px solid var(--petrol);padding:4px 0 4px 14px;display:flex;flex-direction:column;gap:10px;max-width:78ch}
+.dossier h5{margin:0;font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--petrol)}
+.dossier p{margin:0}
+.dossier ul{margin:0;padding-left:0;list-style:none;display:flex;flex-direction:column;gap:4px}
+.dossier li{position:relative;padding-left:16px}
+.dossier li::before{content:"\25AA";position:absolute;left:0;color:var(--red)}
+.dossier .einsch{background:var(--grey);padding:10px 12px}
+.dossier .qlist a{color:var(--petrol)}
+.dossier .stamp{font-size:12px;color:var(--muted)}
+.rcard{display:flex;flex-direction:column;gap:6px;padding:14px 0;border-bottom:1px solid var(--line)}
+.rcard h4{margin:0;font-size:16px;font-weight:600}
+
+/* Sperrbildschirm und Merkliste */
+.lock{position:fixed;inset:0;z-index:50;background:var(--red);color:var(--white);display:grid;place-items:center;padding:24px}
+.lock form{display:flex;flex-direction:column;gap:14px;width:min(380px,100%)}
+.lock h2{margin:0;font-size:26px;font-weight:700}
+.lock p{margin:0;opacity:.92}
+.lock input{border:0;padding:12px 14px;font-size:16px;color:var(--ink)}
+.lock button{border:1px solid var(--white);background:var(--white);color:var(--red);padding:10px 14px;font-weight:700;cursor:pointer}
+.lock .err{min-height:1.4em;font-weight:600}
+.star{border:0;background:none;padding:0 2px;cursor:pointer;color:var(--muted);font-size:14px;line-height:1}
+.star.on{color:var(--mustard)}
+.star:hover{color:var(--red)}
+.favbox{border-left:4px solid var(--mustard);background:var(--grey);padding:12px 16px;display:flex;flex-direction:column;gap:6px}
+.favbox h3{margin:0;font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--petrol)}
+.favbox a{text-decoration:none;font-weight:600}
+.favbox a:hover{text-decoration:underline;text-decoration-color:var(--red)}
+.favbox small{color:var(--muted);font-weight:400}
+</style>
+</head>
+<body>
+
+
+
+<div class="lock" id="lock">
+  <form id="lockform">
+    <svg class="logo" style="height:48px;width:auto;align-self:flex-start" viewBox="0 0 280.74 202.33" role="img" aria-label="3A"><path fill="#FFFFFF" d="M128.16,4.88v22.93c0,1.33-.51,2.53-1.43,3.45l-46.6,46.92c18.01,2.07,34.28,13.42,43.06,30.37l-31.43,82.12c-.6,1.61-.78,3.26-.55,4.92-9.88,4.36-21.14,6.75-33.27,6.75-19.25,0-40.9-4.64-55.92-14.98C.73,186.43,0,184.91,0,183.35v-28.9c0-3.82,4.27-6.2,7.49-4.09,13.88,9.1,30.1,14.75,45.95,14.75,24.12,0,36.35-13.65,36.35-29.27s-13.65-29.27-40.9-29.27c-4.27,0-9.28.14-13.23.46-2.85.23-5.24-2.02-5.24-4.87v-15.99c0-1.33.51-2.57,1.42-3.49l47.42-47.42H7.17c-2.71,0-4.92-2.21-4.92-4.87V4.88C2.25,2.16,4.46,0,7.17,0h116.12c2.71,0,4.87,2.16,4.87,4.87"/><path fill="#FFFFFF" d="M279.93,156.5L221.44,3.14C220.71,1.25,218.9,0,216.88,0h-40.18c-2.02,0-3.83,1.25-4.56,3.13l-72.43,189.18c-1.22,3.19,1.14,6.62,4.56,6.62h31.85c2.05,0,3.87-1.28,4.58-3.2l14.18-38.58h83.84s13.68,37.39,14.25,38.8c.86,2.14,2.08,2.97,3.49,2.97h9.49c1.57,0,2.05-1.86,2.05-1.86l11.95-31.85c1.06-2.81,1.05-5.92-.02-8.72M164.82,121.35l32.12-86.68,31.83,86.68h-63.94Z"/></svg>
+    <h2>3A Versicherungs-News</h2>
+    <p>Interner Branchenüberblick. Bitte geben Sie das Passwort ein, das Sie von Fabian Classen erhalten haben.</p>
+    <input id="pw" type="password" autocomplete="current-password" placeholder="Passwort" aria-label="Passwort">
+    <label style="display:flex;gap:8px;align-items:center;font-size:14px"><input type="checkbox" id="remember" checked style="width:auto"> Auf diesem Gerät angemeldet bleiben</label>
+    <button type="submit" id="unlock">Öffnen</button>
+    <span class="err" id="lockerr" role="alert"></span>
+  </form>
+</div>
+<header class="band">
+  <div class="inner">
+    <div class="brand">
+      <svg class="logo" viewBox="0 0 280.74 202.33" role="img" aria-label="3A"><path fill="#FFFFFF" d="M128.16,4.88v22.93c0,1.33-.51,2.53-1.43,3.45l-46.6,46.92c18.01,2.07,34.28,13.42,43.06,30.37l-31.43,82.12c-.6,1.61-.78,3.26-.55,4.92-9.88,4.36-21.14,6.75-33.27,6.75-19.25,0-40.9-4.64-55.92-14.98C.73,186.43,0,184.91,0,183.35v-28.9c0-3.82,4.27-6.2,7.49-4.09,13.88,9.1,30.1,14.75,45.95,14.75,24.12,0,36.35-13.65,36.35-29.27s-13.65-29.27-40.9-29.27c-4.27,0-9.28.14-13.23.46-2.85.23-5.24-2.02-5.24-4.87v-15.99c0-1.33.51-2.57,1.42-3.49l47.42-47.42H7.17c-2.71,0-4.92-2.21-4.92-4.87V4.88C2.25,2.16,4.46,0,7.17,0h116.12c2.71,0,4.87,2.16,4.87,4.87"/><path fill="#FFFFFF" d="M279.93,156.5L221.44,3.14C220.71,1.25,218.9,0,216.88,0h-40.18c-2.02,0-3.83,1.25-4.56,3.13l-72.43,189.18c-1.22,3.19,1.14,6.62,4.56,6.62h31.85c2.05,0,3.87-1.28,4.58-3.2l14.18-38.58h83.84s13.68,37.39,14.25,38.8c.86,2.14,2.08,2.97,3.49,2.97h9.49c1.57,0,2.05-1.86,2.05-1.86l11.95-31.85c1.06-2.81,1.05-5.92-.02-8.72M164.82,121.35l32.12-86.68,31.83,86.68h-63.94Z"/></svg>
+      <div class="brand-text">
+        <span class="eyebrow" id="hero-eyebrow">Interner Branchenüberblick · Mo–Fr</span>
+        <h1>Versicherungs-News</h1>
+        <div class="funnel-line" id="hero-stats"></div>
+      </div>
+    </div>
+    <div class="tabs" role="group" aria-label="Ansicht">
+      <button id="tab-ausgabe" aria-pressed="true">Tagesausgabe</button>
+      <button id="tab-archiv" aria-pressed="false">Archiv &amp; Suche</button>
+    </div>
+  </div>
+</header>
+<dialog class="how" id="how" aria-labelledby="how-title">
+  <div class="how-head"><div><span class="eyebrow">Transparenz</span><h2 id="how-title">So entsteht die Tagesausgabe</h2></div>
+    <button class="x" id="how-close" aria-label="Schließen">&times;</button></div>
+  <div class="how-body" id="how-body"></div>
+</dialog>
+
+<div class="inner">
+  <div class="page">
+    <div class="fwrap" id="fwrap"><button class="fsum" id="fsum" aria-expanded="false" aria-controls="filters">Filter und Suche</button>
+    <aside class="filters" id="filters" aria-label="Filter">
+      <div class="fgroup" id="g-ausgabe">
+        <p class="flabel">Ausgabe</p>
+        <select class="field" id="sel-ausgabe" aria-label="Ausgabe wählen"><option>Lädt …</option></select>
+      </div>
+      <div class="fgroup">
+        <p class="flabel">Suche</p>
+        <input class="field" id="q" type="search" placeholder="Stichwort, z. B. DORA, Allianz" autocomplete="off">
+      </div>
+      <div class="fgroup">
+        <p class="flabel"><span>Sparten</span><button id="reset-sp" hidden>alle</button></p>
+        <div class="chips" id="f-sparten"></div>
+      </div>
+      <div class="fgroup">
+        <p class="flabel"><span>Themen</span><button id="reset-th" hidden>alle</button></p>
+        <div class="chips" id="f-themen"></div>
+      </div>
+      <div class="fgroup">
+        <p class="flabel"><span>Unternehmen</span><button id="reset-u" hidden>alle</button></p>
+        <select class="field" id="sel-firm" aria-label="Unternehmen filtern"><option value="">Alle Unternehmen</option></select>
+      </div>
+      <div class="fgroup">
+        <p class="flabel"><span>Meine Unternehmen</span></p>
+        <div class="chips" id="f-fav"></div>
+        <p class="hint" id="fav-hint">Mit ☆ an einem Unternehmen merken Sie es sich hier.</p>
+      </div>
+      <p class="hint">Ihre Filter in diesem Browser gespeichert. Die Top-Themen werden immer angezeigt.</p>
+    </aside>
+    </div>
+
+    <main id="main" aria-live="polite">
+      <div class="empty"><h3>Ausgaben werden geladen</h3><p>Der tägliche Lauf trägt Mo–Fr gegen 7 Uhr die neuen Meldungen ein.</p></div>
+    </main>
+  </div>
+
+  <footer>
+    <span>KI-generierte Kurzzusammenfassungen auf Basis von Titel und Teaser der Quellen. Für Details bitte immer die Originalquelle öffnen.</span>
+    <span id="foot-status"></span>
+  </footer>
+</div>
+
+<script>
+const SPARTEN={leben:"Leben",kranken:"Kranken/PKV",komp_privat:"Komposit Privat",komp_gewerbe:"Komposit Gewerbe",rueck:"Rück",uebergreifend:"Übergreifend"};
+const THEMEN={aufsicht:"Aufsicht & Regulatorik",itreg:"IT-Regulatorik",ki:"KI/GenAI",digital:"Digitalisierung",vertrieb:"Vertrieb & Makler",markt:"Markt & Unternehmen",personal:"Personalien",insurtech:"InsurTech",produkte:"Produkte & Tarife",schaden:"Schaden & NatCat",esg:"ESG",recht:"Recht & Urteile",kapitalanlage:"Kapitalanlage & Aktuariat"};
+const BLOECKE=[["aufsicht","Aufsicht & Regulatorik"],["itki","IT-Regulatorik, KI & Digitalisierung"],["markt","Markt & Unternehmen"],["vertrieb","Vertrieb & Produkte"],["schaden","Schaden & NatCat"],["intl","International"]];
+const WT=["So","Mo","Di","Mi","Do","Fr","Sa"];
+const MAX_AUSGABEN=250;
+
+const state={view:"ausgabe",ausgaben:[],datum:null,sp:new Set(),th:new Set(),firm:"",q:"",fav:{}};
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const fmtDate=d=>{const t=new Date(d+"T12:00:00");return isNaN(t)?d:`${WT[t.getDay()]}, ${t.toLocaleDateString("de-DE",{day:"2-digit",month:"2-digit",year:"numeric"})}`};
+const ddmm=d=>d?`${d.slice(8,10)}.${d.slice(5,7)}.`:"";
+const ls={get(k,d){try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}},del(k){try{localStorage.removeItem(k)}catch(e){}}};
+
+const firmsOf=m=>{const seen=new Set();return (m.unternehmen||[]).filter(u=>u&&u.id&&!seen.has(u.id)&&seen.add(u.id))};
+
+/* Gelesen-Status, Filter und Merkliste: je Browser gespeichert */
+let READ=new Set(ls.get("3a-team-gelesen",[]));
+function saveRead(){ls.set("3a-team-gelesen",[...READ].slice(-5000))}
+function markRead(ids,val=true){for(const id of ids)val?READ.add(id):READ.delete(id);saveRead();render()}
+function loadPrefs(){const p=ls.get("3a-team-ansicht",{});state.sp=new Set(p.sp||[]);state.th=new Set(p.th||[]);state.q=p.q||"";state.firm=p.firm||"";state.view=p.view==="archiv"?"archiv":"ausgabe";state.fav=p.fav||{}}
+function savePrefs(){ls.set("3a-team-ansicht",{sp:[...state.sp],th:[...state.th],q:state.q,firm:state.firm,view:state.view,fav:state.fav})}
+function toggleFav(id,name){if(state.fav[id])delete state.fav[id];else state.fav[id]=name;savePrefs();render()}
+
+function chips(el,map,set){
+  el.innerHTML=Object.entries(map).map(([k,v])=>`<button class="chip" data-k="${k}" aria-pressed="${set.has(k)}">${esc(v)}</button>`).join("");
+  el.onclick=e=>{const b=e.target.closest(".chip");if(!b)return;const k=b.dataset.k;set.has(k)?set.delete(k):set.add(k);b.setAttribute("aria-pressed",set.has(k));savePrefs();render()};
+}
+function favChips(){
+  const ids=Object.keys(state.fav);
+  $("f-fav").innerHTML=ids.map(id=>`<button class="chip" data-fav="${esc(id)}" aria-pressed="${state.firm===id}" title="Alle Meldungen zu ${esc(state.fav[id])}">★ ${esc(state.fav[id])}</button>`).join("");
+  $("fav-hint").hidden=ids.length>0;
+}
+
+function matches(m){
+  if(state.sp.size&&!(m.sparten||[]).some(s=>state.sp.has(s)))return false;
+  if(state.th.size&&!(m.themen||[]).some(t=>state.th.has(t)))return false;
+  if(state.firm&&!firmsOf(m).some(u=>u.id===state.firm))return false;
+  if(state.q){const h=`${m.titel} ${m.zusammenfassung} ${m.quelle} ${firmsOf(m).map(u=>u.name+" "+(u.konzern||"")).join(" ")}`.toLowerCase();
+    if(!state.q.toLowerCase().split(/\s+/).filter(Boolean).every(w=>h.includes(w)))return false}
+  return true;
+}
+const firmBtns=m=>firmsOf(m).map(u=>`<span style="white-space:nowrap"><button class="firm" data-firm="${esc(u.id)}" title="Alle Meldungen zu ${esc(u.name)}">${esc(u.name)}</button><button class="star${state.fav[u.id]?" on":""}" data-star="${esc(u.id)}" data-name="${esc(u.name)}" title="${state.fav[u.id]?"Aus meinen Unternehmen entfernen":"Zu meinen Unternehmen hinzufügen"}" aria-label="${state.fav[u.id]?"Aus meinen Unternehmen entfernen":"Zu meinen Unternehmen hinzufügen"}">${state.fav[u.id]?"★":"☆"}</button></span>`).join("");
+
+function itemHTML(m){
+  const tags=(m.sparten||[]).map(s=>`<span class="tag">${esc(SPARTEN[s]||s)}</span>`).join("");
+  const also=(m.auch||[]).length?`<span class="also">auch bei ${m.auch.map(a=>`<a href="${esc(a.l)}" target="_blank" rel="noopener">${esc(a.q)}</a>`).join(", ")}</span>`:"";
+  return `<article class="item${READ.has(m.id)?" read":""}" id="m-${esc(m.id)}"><h4><a href="${esc(m.link)}" target="_blank" rel="noopener" data-open="${esc(m.id)}">${esc(m.titel)}</a></h4>
+    ${m.zusammenfassung?`<p>${esc(m.zusammenfassung)}</p>`:""}
+    <div class="tags"><span class="src">${esc(m.quelle)} · ${esc(ddmm(m.datum)+" "+(m.datum||"").slice(11,16))}</span>${firmBtns(m)}${tags}${also}<button class="rmark" data-act="read" data-id="${esc(m.id)}">${READ.has(m.id)?"Gelesen":"Als gelesen markieren"}</button></div></article>`;
+}
+
+function openHow(a){
+  const ms=a.meldungen||[];const heute=new Set(ms.map(m=>m.quelle));const nq=QUELLEN.length;const tops=ms.filter(m=>m.top).length;
+  const chip=q=>`<span class="qchip${heute.has(q.name)?" heute":""}">${esc(q.name)}</span>`;
+  const used=new Set();
+  const gruppen=QGRUPPEN.map(([t,ids])=>{const qs=QUELLEN.filter(q=>ids.includes(q.id));qs.forEach(q=>used.add(q.id));return [t,qs]});
+  gruppen.push(["International",QUELLEN.filter(q=>q.intl&&!used.has(q.id))]);QUELLEN.filter(q=>q.intl).forEach(q=>used.add(q.id));
+  gruppen.push(["Weitere",QUELLEN.filter(q=>!used.has(q.id))]);
+  $("how-body").innerHTML=`
+    <div class="flow">
+      <div class="st"><b>${nq||"–"}</b><span>Quellen werden jeden Morgen automatisch abgerufen</span></div><div class="ar">→</div>
+      <div class="st"><b>${esc(a.kandidaten??"–")}</b><span>neue Beiträge seit der letzten Ausgabe geprüft</span></div><div class="ar">→</div>
+      <div class="st"><b>${ms.length}</b><span>Meldungen ausgewählt, davon ${tops} Top-Themen</span></div>
+    </div>
+    <h3>So wählt die KI-Redaktion aus</h3>
+    <ul class="rules">
+      <li>Relevant ist, was die Versicherungswirtschaft in Deutschland und der EU betrifft – Aufsicht, IT-Regulatorik, KI, Markt, Vertrieb, Produkte, Schaden.</li>
+      <li>Im Mittelpunkt stehen Versicherer und ihr Marktumfeld; Werbung, Event-Hinweise und Ratgeber ohne Nachrichtenwert fallen heraus.</li>
+      <li>Berichten mehrere Medien über dasselbe, wird daraus <b>eine</b> Meldung („auch bei …“).</li>
+      <li>Höchstens drei internationale Meldungen; Zusammenfassungen beruhen nur auf frei zugänglichen Titeln und Teasern.</li>
+    </ul>
+    <h3>Beobachtete Quellen <span style="font-weight:400;color:var(--muted);font-size:13px">– heute in der Ausgabe vertreten: ${heute.size} (hervorgehoben)</span></h3>
+    ${gruppen.filter(([,qs])=>qs.length).map(([t,qs])=>`<div class="qgroup"><p>${esc(t)}</p><div class="qchips">${qs.map(chip).join("")}</div></div>`).join("")}
+    <p class="how-note">Viele Quellen veröffentlichen nicht täglich (z.&nbsp;B. EIOPA, Ratingagenturen, Datenschutzbehörden). Auswahl und Zusammenfassungen sind KI-gestützt erstellt; maßgeblich ist immer die verlinkte Originalquelle.</p>`;
+  const d=$("how");if(d.showModal)d.showModal();else d.setAttribute("open","");
+}
+$("how-close").onclick=()=>$("how").close();
+$("how").addEventListener("click",e=>{if(e.target===$("how"))$("how").close()});
+function current(){return state.ausgaben.find(x=>x.datum===state.datum)||state.ausgaben[0]}
+function heroStats(){
+  const a=current();
+  $("hero-eyebrow").textContent=a?`Interner Branchenüberblick · Ausgabe ${fmtDate(a.datum)}`:"Interner Branchenüberblick · Mo–Fr";
+  if(!a){$("hero-stats").innerHTML="";return}
+  const ms=a.meldungen||[];const firms=new Set(ms.flatMap(m=>firmsOf(m).map(u=>u.id))).size;const qs=new Set(ms.map(m=>m.quelle)).size;
+  const nq=QUELLEN.length;const nk=a.kandidaten;
+  $("hero-stats").innerHTML=`<b>${ms.length} Meldungen</b> ausgewählt`+(nk!=null?` aus <b>${esc(nk)} neuen Beiträgen</b>`:"")+(nq?` von <b>${nq} beobachteten Quellen</b>`:"")
+    +` · ${firms} Unternehmen genannt<button class="howbtn" id="howbtn" type="button">So entsteht die Ausgabe ›</button>`;
+  $("howbtn").onclick=()=>openHow(a);
+}
+function activeFilters(){return [...[...state.sp].map(k=>SPARTEN[k]),...[...state.th].map(k=>THEMEN[k]),...(state.firm?[(firmIndex[state.firm]||{}).name||state.fav[state.firm]||state.firm]:[]),...(state.q?["„"+state.q+"“"]:[])]}
+function filterBar(hidden){const f=activeFilters();if(!f.length)return "";
+  return `<div class="fbar"><span><b>Filter aktiv:</b> ${esc(f.join(", "))}${hidden>0?` · ${hidden} ${hidden===1?"Meldung":"Meldungen"} ausgeblendet`:""}</span><button class="rbtn" data-act="clearfilters">Alle Filter entfernen</button></div>`}
+
+function favBox(){
+  const ids=Object.keys(state.fav);if(!ids.length)return "";
+  const rows=[];const seen=new Set();
+  for(const a of state.ausgaben.slice(0,10))for(const m of a.meldungen||[])if(!seen.has(m.id)&&firmsOf(m).some(u=>state.fav[u.id])){seen.add(m.id);rows.push(m)}
+  const list=rows.slice(0,6);
+  return `<section class="favbox"><h3>Meine Unternehmen · neueste Meldungen</h3>${list.length?list.map(m=>`<div><a href="${esc(m.link)}" target="_blank" rel="noopener" data-open="${esc(m.id)}">${esc(m.titel)}</a> <small>${esc(m.quelle)} · ${esc(ddmm(m.datum))} · ${esc(firmsOf(m).filter(u=>state.fav[u.id]).map(u=>u.name).join(", "))}</small></div>`).join(""):`<span class="hint">Zu Ihren gemerkten Unternehmen gibt es in den letzten Ausgaben keine Meldung.</span>`}</section>`;
+}
+
+function renderAusgabe(){
+  const a=current();if(!a)return emptyHTML();
+  const all=a.meldungen||[];const list=all.filter(matches);const tops=all.filter(m=>m.top);
+  let h=filterBar(all.filter(m=>!m.top).length-list.filter(m=>!m.top).length);
+  if(tops.length)h+=`<section><div class="sechead"><h2>Top-Themen</h2><span class="meta">${esc(fmtDate(a.datum))}</span></div><div class="tops">${tops.map(m=>`<article class="topcard${READ.has(m.id)?" read":""}"><span class="kicker">${esc(THEMEN[(m.themen||[])[0]]||"")}</span><h3><a href="${esc(m.link)}" target="_blank" rel="noopener" data-open="${esc(m.id)}">${esc(m.titel)}</a></h3>${m.zusammenfassung?`<p>${esc(m.zusammenfassung)}</p>`:""}<div class="tags"><span class="src">${esc(m.quelle)}</span>${firmBtns(m)}</div></article>`).join("")}</div></section>`;
+  h+=favBox();
+  const rest=list.filter(m=>!m.top);const restAll=all.filter(m=>!m.top);
+  const unread=list.filter(m=>!READ.has(m.id)).length;
+  const present=BLOECKE.map(([id,label])=>[id,label,rest.filter(m=>m.block===id).length]).filter(x=>x[2]);
+  const jump=present.length>1?`<nav class="jump" aria-label="Rubriken">${present.map(([id,label,n])=>`<a href="#b-${id}">${esc(label)} <b>${n}</b></a>`).join("")}</nav>`:"";
+  const blocks=BLOECKE.map(([id,label])=>{const items=rest.filter(m=>m.block===id);return items.length?`<section class="block" id="b-${id}"><h3>${esc(label)}</h3>${items.map(itemHTML).join("")}</section>`:""}).join("");
+  if(blocks)h+=`<section><div class="sechead"><h2>Weitere Meldungen</h2><span class="meta">${unread?`<b class="unread">${unread} von ${list.length} ungelesen</b> · <button class="rmark" data-act="readall">Alle als gelesen markieren</button> · `:""}${rest.length} Meldungen${list.length<all.length?` · gefiltert, ${all.length} insgesamt`:""}</span></div>${jump}${blocks}</section>`;
+  if(!rest.length&&restAll.length)h+=`<div class="empty"><h3>Keine weitere Meldung passt zu Ihren Filtern</h3><p>Diese Ausgabe hat ${restAll.length} weitere Meldungen. Setzen Sie Sparten oder Themen auf „alle“ oder ändern Sie die Suche.</p></div>`;
+  const err=a.quellen_fehler||[];
+  $("foot-status").innerHTML=`Erzeugt ${esc(a.erzeugt||"")} · Zeitraum seit ${esc(a.zeitraum_seit||"–")}`+(err.length?` · <span class="warnline">Ohne Ergebnis: ${esc(err.join(", "))}</span>`:"");
+  return h;
+}
+
+function renderArchiv(){
+  if(!state.ausgaben.length)return emptyHTML();
+  let total=0,h="";const seen=new Set();
+  for(const a of state.ausgaben){
+    const items=(a.meldungen||[]).filter(m=>!seen.has(m.id)&&matches(m));items.forEach(m=>seen.add(m.id));
+    if(!items.length)continue;total+=items.length;
+    h+=`<section class="block"><h3>${esc(fmtDate(a.datum))}</h3>${items.map(itemHTML).join("")}</section>`;
+  }
+  const f=state.firm?firmIndex[state.firm]:null;
+  const star=f?` <button class="star${state.fav[f.id]?" on":""}" data-star="${esc(f.id)}" data-name="${esc(f.name)}" style="font-size:20px">${state.fav[f.id]?"★":"☆"}</button>`:"";
+  const head=`<div class="sechead"><h2>${f?esc(f.name)+star:"Archiv"}</h2><span class="meta">${total} Meldungen in ${state.ausgaben.length} Ausgaben</span></div>`;
+  $("foot-status").textContent="";
+  return filterBar(0)+`<section>${head}${h||`<div class="empty"><h3>Nichts gefunden</h3><p>Versuchen Sie einen anderen Suchbegriff oder entfernen Sie Filter.</p></div>`}</section>`;
+}
+function emptyHTML(){return `<div class="empty"><h3>Noch keine Ausgabe vorhanden</h3><p>Sobald der tägliche Lauf Mo–Fr gegen 7 Uhr Meldungen einträgt, erscheinen sie hier.</p></div>`}
+
+let firmIndex={};
+function buildFirmSelect(){
+  firmIndex={};const count={};
+  for(const a of state.ausgaben)for(const m of a.meldungen||[])for(const u of firmsOf(m)){firmIndex[u.id]=u;count[u.id]=(count[u.id]||0)+1}
+  const all=Object.values(firmIndex).sort((x,y)=>x.name.localeCompare(y.name,"de"));
+  $("sel-firm").innerHTML=`<option value="">Alle Unternehmen</option>`+all.map(u=>`<option value="${esc(u.id)}">${esc(u.name)} (${count[u.id]})</option>`).join("");
+  $("sel-firm").value=firmIndex[state.firm]?state.firm:"";
+}
+function buildAusgabeSelect(){
+  $("sel-ausgabe").innerHTML=state.ausgaben.length?state.ausgaben.map(a=>`<option value="${esc(a.datum)}">${esc(fmtDate(a.datum))}</option>`).join(""):`<option>Noch keine Ausgabe</option>`;
+  if(state.datum)$("sel-ausgabe").value=state.datum;
+}
+function render(){
+  for(const v of ["ausgabe","archiv"])$("tab-"+v).setAttribute("aria-pressed",state.view===v);
+  $("g-ausgabe").hidden=state.view!=="ausgabe";
+  $("reset-sp").hidden=!state.sp.size;$("reset-th").hidden=!state.th.size;$("reset-u").hidden=!state.firm;
+  $("q").value!==state.q&&document.activeElement!==$("q")&&($("q").value=state.q);
+  favChips();heroStats();
+  $("main").innerHTML=state.view==="ausgabe"?renderAusgabe():renderArchiv();
+}
+
+for(const v of ["ausgabe","archiv"])$("tab-"+v).onclick=()=>{state.view=v;savePrefs();render()};
+$("sel-ausgabe").onchange=e=>{state.datum=e.target.value;render()};
+$("sel-firm").onchange=e=>{state.firm=e.target.value;if(state.firm)state.view="archiv";savePrefs();render()};
+let qt;$("q").oninput=e=>{clearTimeout(qt);qt=setTimeout(()=>{state.q=e.target.value.trim();savePrefs();render()},200)};
+$("reset-sp").onclick=()=>{state.sp.clear();chips($("f-sparten"),SPARTEN,state.sp);savePrefs();render()};
+$("reset-th").onclick=()=>{state.th.clear();chips($("f-themen"),THEMEN,state.th);savePrefs();render()};
+$("reset-u").onclick=()=>{state.firm="";$("sel-firm").value="";savePrefs();render()};
+$("f-fav").onclick=e=>{const b=e.target.closest("[data-fav]");if(!b)return;const id=b.dataset.fav;state.firm=state.firm===id?"":id;if(state.firm)state.view="archiv";savePrefs();render()};
+$("fsum").onclick=()=>{const o=$("fwrap").classList.toggle("open");$("fsum").setAttribute("aria-expanded",o)};
+function openMark(e){const o=e.target.closest("[data-open]");if(o&&!READ.has(o.dataset.open)){READ.add(o.dataset.open);saveRead();setTimeout(render,300)}}
+$("main").addEventListener("auxclick",openMark);
+$("main").addEventListener("click",e=>{openMark(e);
+  const s=e.target.closest("[data-star]");if(s){toggleFav(s.dataset.star,s.dataset.name);return}
+  const b=e.target.closest("[data-act]");if(b){const act=b.dataset.act;
+    if(act==="read")markRead([b.dataset.id],!READ.has(b.dataset.id));
+    else if(act==="readall"){const a=current();markRead((a?.meldungen||[]).filter(matches).map(m=>m.id))}
+    else if(act==="clearfilters"){state.sp.clear();state.th.clear();state.firm="";state.q="";$("q").value="";$("sel-firm").value="";chips($("f-sparten"),SPARTEN,state.sp);chips($("f-themen"),THEMEN,state.th);savePrefs();render()}
+    return}
+  const f=e.target.closest("[data-firm]");if(!f)return;state.firm=f.dataset.firm;state.view="archiv";$("sel-firm").value=state.firm;savePrefs();render();window.scrollTo({top:0})});
+
+/* Entschlüsselung: AES-256-GCM, Schlüssel per PBKDF2-SHA256 aus dem Passwort */
+const b64=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
+let KEY=null;
+async function deriveKey(pw,meta){const base=await crypto.subtle.importKey("raw",new TextEncoder().encode(pw),"PBKDF2",false,["deriveKey"]);
+  return crypto.subtle.deriveKey({name:"PBKDF2",salt:b64(meta.salt),iterations:meta.iter,hash:"SHA-256"},base,{name:"AES-GCM",length:256},true,["decrypt"])}
+async function dec(key,box){const pt=await crypto.subtle.decrypt({name:"AES-GCM",iv:b64(box.iv)},key,b64(box.ct));return JSON.parse(new TextDecoder().decode(pt))}
+let QUELLEN=[];
+const QGRUPPEN=[["Fachmedien",["vj","vj-ms","vbote","asscompact","procontra","pfefferminzia","vwheute","vmonitor","dasinvestment","itfm","dpn"]],
+  ["Aufsicht, Verbände & Politik",["bafin","bafin-rs","eiopa","gdv","edpb","dsk","bnetza","hib"]],
+  ["Ratings, Verbraucher & Analysen",["assekurata","fub","warentest","pwc","aerzteblatt"]]];
+const getJSON=async p=>{const r=await fetch(p,{cache:"no-store"});if(!r.ok)throw new Error(p+": "+r.status);return r.json()};
+
+async function loadData(){
+  try{QUELLEN=(await getJSON("quellen.json")).quellen||[]}catch(e){QUELLEN=[]}
+  const idx=await getJSON("data/index.json");
+  const list=(idx.ausgaben||[]).slice(0,MAX_AUSGABEN);
+  const out=[];
+  await Promise.all(list.map(async x=>{try{out.push(await dec(KEY,await getJSON(`data/ausgaben/${x.datum}.enc.json`)))}catch(e){}}));
+  for(const a of out)for(const m of a.meldungen||[])m.sparten=[...new Set((m.sparten||[]).map(s=>s==="bav"?"leben":s))];
+  state.ausgaben=out.sort((a,b)=>b.datum.localeCompare(a.datum));
+  if(!state.datum||!state.ausgaben.some(a=>a.datum===state.datum))state.datum=state.ausgaben[0]?.datum||null;
+  buildAusgabeSelect();buildFirmSelect();render();
+}
+async function unlock(pw,remember){
+  const meta=await getJSON("data/meta.json");
+  let key;
+  if(pw){key=await deriveKey(pw,meta)}else{const raw=ls.get("3a-team-key",null);if(!raw)return false;key=await crypto.subtle.importKey("raw",b64(raw),"AES-GCM",true,["decrypt"])}
+  try{await dec(key,meta.check)}catch(e){if(!pw)ls.del("3a-team-key");return false}
+  KEY=key;
+  if(pw&&remember){const raw=new Uint8Array(await crypto.subtle.exportKey("raw",key));ls.set("3a-team-key",btoa(String.fromCharCode(...raw)))}
+  $("lock").hidden=true;await loadData();return true;
+}
+$("lockform").onsubmit=async e=>{e.preventDefault();$("lockerr").textContent="Wird geöffnet …";$("unlock").disabled=true;
+  try{const ok=await unlock($("pw").value,$("remember").checked);$("lockerr").textContent=ok?"":"Das Passwort stimmt nicht. Bitte erneut versuchen."}
+  catch(err){$("lockerr").textContent="Die Daten konnten nicht geladen werden. Bitte später erneut versuchen."}
+  $("unlock").disabled=false};
+
+document.documentElement.lang="de";
+loadPrefs();chips($("f-sparten"),SPARTEN,state.sp);chips($("f-themen"),THEMEN,state.th);$("q").value=state.q;render();
+unlock(null,false).catch(()=>{});
+</script>
+</body>
+</html>

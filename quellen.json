@@ -1,0 +1,115 @@
+{
+ "quellen": [
+  {
+   "id": "vj",
+   "name": "VersicherungsJournal"
+  },
+  {
+   "id": "vj-ms",
+   "name": "VersicherungsJournal Medienspiegel"
+  },
+  {
+   "id": "vbote",
+   "name": "Versicherungsbote"
+  },
+  {
+   "id": "asscompact",
+   "name": "AssCompact"
+  },
+  {
+   "id": "procontra",
+   "name": "procontra"
+  },
+  {
+   "id": "pfefferminzia",
+   "name": "Pfefferminzia"
+  },
+  {
+   "id": "vwheute",
+   "name": "VWheute"
+  },
+  {
+   "id": "vmonitor",
+   "name": "Versicherungsmonitor"
+  },
+  {
+   "id": "dasinvestment",
+   "name": "DAS INVESTMENT"
+  },
+  {
+   "id": "itfm",
+   "name": "IT Finanzmagazin"
+  },
+  {
+   "id": "bafin",
+   "name": "BaFin"
+  },
+  {
+   "id": "bafin-rs",
+   "name": "BaFin Rundschreiben"
+  },
+  {
+   "id": "gdv",
+   "name": "GDV"
+  },
+  {
+   "id": "eiopa",
+   "name": "EIOPA"
+  },
+  {
+   "id": "edpb",
+   "name": "EDPB"
+  },
+  {
+   "id": "dsk",
+   "name": "Datenschutzkonferenz"
+  },
+  {
+   "id": "bnetza",
+   "name": "Bundesnetzagentur"
+  },
+  {
+   "id": "hib",
+   "name": "heute im bundestag"
+  },
+  {
+   "id": "pwc",
+   "name": "PwC Insurance Blog"
+  },
+  {
+   "id": "assekurata",
+   "name": "Assekurata"
+  },
+  {
+   "id": "fub",
+   "name": "Franke und Bornberg"
+  },
+  {
+   "id": "warentest",
+   "name": "Stiftung Warentest"
+  },
+  {
+   "id": "dpn",
+   "name": "dpn"
+  },
+  {
+   "id": "commrisk",
+   "name": "Commercial Risk",
+   "intl": true
+  },
+  {
+   "id": "aerzteblatt",
+   "name": "Ärzteblatt"
+  },
+  {
+   "id": "coverager",
+   "name": "Coverager",
+   "intl": true
+  },
+  {
+   "id": "digin",
+   "name": "Digital Insurance",
+   "intl": true
+  }
+ ]
+}
