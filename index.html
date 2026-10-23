@@ -311,7 +311,8 @@ const fmtDate=d=>{const t=new Date(d+"T12:00:00");return isNaN(t)?d:`${WT[t.getD
 const ddmm=d=>d?`${d.slice(8,10)}.${d.slice(5,7)}.`:"";
 const ls={get(k,d){try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}},del(k){try{localStorage.removeItem(k)}catch(e){}}};
 
-const firmsOf=m=>{const seen=new Set();return (m.unternehmen||[]).filter(u=>u&&u.id&&!seen.has(u.id)&&seen.add(u.id))};
+/* Nur Unternehmen aus der Stammliste; aeltere Ausgaben enthalten teils Personen o. Ae. (Kennzeichen "neu") */
+const firmsOf=m=>{const seen=new Set();return (m.unternehmen||[]).filter(u=>u&&u.id&&!u.neu&&!seen.has(u.id)&&seen.add(u.id))};
 
 /* Gelesen-Status, Filter und Merkliste: je Browser gespeichert */
 let READ=new Set(ls.get("3a-team-gelesen",[]));
@@ -322,8 +323,8 @@ function savePrefs(){ls.set("3a-team-ansicht",{sp:[...state.sp],th:[...state.th]
 function toggleFav(id,name){if(state.fav[id])delete state.fav[id];else state.fav[id]=name;if(!Object.keys(state.fav).length)state.favOnly=false;savePrefs();render()}
 const isFav=m=>firmsOf(m).some(u=>state.fav[u.id]);
 
-/* Firmenlogos: nur eigene Dateien in logos/ (Liste in logos/index.json), sonst Initialen */
-let LOGOS=new Set();
+/* Firmenlogos: verschluesselt in data/logos.enc.json (nur nach Passworteingabe), sonst Initialen */
+let LOGOS={};
 const STOP=new Set(["ag","se","gmbh","kg","vvag","ag.","deutschland","versicherung","versicherungen","versicherungsgruppe","gruppe","group","die","der","das","und","&","–","-"]);
 function initials(name){
   const w=String(name||"").replace(/[+]/g," + ").split(/[\s/]+/).filter(x=>x&&!STOP.has(x.toLowerCase()));
@@ -332,7 +333,8 @@ function initials(name){
   return (w[0][0]+w[1][0]).toUpperCase();
 }
 function logo(id,name,cls=""){
-  if(LOGOS.has(id))return `<span class="flogo img ${cls}" title="${esc(name)}"><img src="logos/${esc(id)}.png" alt="" loading="lazy"></span>`;
+  const src=LOGOS[id];
+  if(src&&/^data:image\/(png|jpeg|webp|svg\+xml);base64,/.test(src))return `<span class="flogo img ${cls}" title="${esc(name)}"><img src="${src}" alt=""></span>`;
   const t=initials(name);
   return `<span class="flogo ${cls}${t.length>2?" l"+Math.min(t.length,4):""}" aria-hidden="true">${esc(t)}</span>`;
 }
@@ -467,6 +469,9 @@ let firmIndex={};
 function buildFirmSelect(){
   firmIndex={};const count={};
   for(const a of state.ausgaben)for(const m of a.meldungen||[])for(const u of firmsOf(m)){firmIndex[u.id]=u;count[u.id]=(count[u.id]||0)+1}
+  const neuIds=new Set();for(const a of state.ausgaben)for(const m of a.meldungen||[])for(const u of m.unternehmen||[])if(u&&u.neu)neuIds.add(u.id);
+  let changed=false;for(const id of Object.keys(state.fav))if(neuIds.has(id)&&!firmIndex[id]){delete state.fav[id];changed=true}
+  if(changed){if(!Object.keys(state.fav).length)state.favOnly=false;savePrefs()}
   const all=Object.values(firmIndex).sort((x,y)=>x.name.localeCompare(y.name,"de"));
   $("sel-firm").innerHTML=`<option value="">Alle Unternehmen</option>`+all.map(u=>`<option value="${esc(u.id)}">${esc(u.name)} (${count[u.id]})</option>`).join("");
   $("sel-firm").value=firmIndex[state.firm]?state.firm:"";
@@ -521,7 +526,7 @@ const getJSON=async p=>{const r=await fetch(p,{cache:"no-store"});if(!r.ok)throw
 
 async function loadData(){
   try{QUELLEN=(await getJSON("quellen.json")).quellen||[]}catch(e){QUELLEN=[]}
-  try{LOGOS=new Set((await getJSON("logos/index.json")).logos||[])}catch(e){LOGOS=new Set()}
+  try{LOGOS=(await dec(KEY,await getJSON("data/logos.enc.json"))).logos||{}}catch(e){LOGOS={}}
   const idx=await getJSON("data/index.json");
   const list=(idx.ausgaben||[]).slice(0,MAX_AUSGABEN);
   const out=[];
