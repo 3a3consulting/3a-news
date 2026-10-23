@@ -198,6 +198,21 @@ footer::before{content:"3A";position:absolute;left:0;top:14px;background:var(--r
 .favbox a{text-decoration:none;font-weight:600}
 .favbox a:hover{text-decoration:underline;text-decoration-color:var(--red)}
 .favbox small{color:var(--muted);font-weight:400}
+.favbox .frow{display:flex;gap:10px;align-items:flex-start}
+.favbox .more{align-self:flex-start;border:0;background:none;padding:0;color:var(--red);font-weight:600;cursor:pointer;font-size:13px}
+.favbox .more:hover{text-decoration:underline}
+.age{display:inline-block;font-size:11.5px;font-weight:700;color:var(--petrol);background:var(--white);padding:0 6px;margin-right:4px;white-space:nowrap}
+.age.neu{background:var(--mustard);color:var(--ink)}
+.flogo{flex:none;display:inline-grid;place-items:center;width:26px;height:26px;background:var(--petrol);color:var(--white);font-size:10.5px;font-weight:800;letter-spacing:.02em;line-height:1;overflow:hidden;vertical-align:middle}
+.flogo.img{background:var(--white);border:1px solid var(--line)}
+.flogo img{width:100%;height:100%;object-fit:contain;display:block}
+.flogo.sm{width:20px;height:20px;font-size:9px;margin-right:4px}
+.flogo.lg{width:34px;height:34px;font-size:13px;margin-right:8px}
+.flogo.l3{font-size:8.5px}.flogo.l4{font-size:7px;letter-spacing:0}.flogo.sm.l3{font-size:7px}.flogo.sm.l4{font-size:6px}.flogo.lg.l3{font-size:11px}.flogo.lg.l4{font-size:9.5px}
+.chip .flogo{margin-right:4px}
+.item.isfav{border-left:4px solid var(--mustard);padding-left:12px}
+.topcard.isfav{box-shadow:inset 4px 0 0 var(--mustard)}
+.favmark{font-size:11.5px;font-weight:700;color:var(--ink);background:var(--mustard);padding:0 6px;white-space:nowrap}
 </style>
 </head>
 <body>
@@ -264,7 +279,7 @@ footer::before{content:"3A";position:absolute;left:0;top:14px;background:var(--r
       <div class="fgroup">
         <p class="flabel"><span>Meine Unternehmen</span></p>
         <div class="chips" id="f-fav"></div>
-        <p class="hint" id="fav-hint">Mit ☆ an einem Unternehmen merken Sie es sich hier.</p>
+        <p class="hint" id="fav-hint">Mit ☆ an einem Unternehmen merken Sie es sich hier. Meldungen dazu werden markiert und oben gesammelt.</p>
       </div>
       <p class="hint">Ihre Filter in diesem Browser gespeichert. Die Top-Themen werden immer angezeigt.</p>
     </aside>
@@ -288,7 +303,8 @@ const BLOECKE=[["aufsicht","Aufsicht & Regulatorik"],["itki","IT-Regulatorik, KI
 const WT=["So","Mo","Di","Mi","Do","Fr","Sa"];
 const MAX_AUSGABEN=250;
 
-const state={view:"ausgabe",ausgaben:[],datum:null,sp:new Set(),th:new Set(),firm:"",q:"",fav:{}};
+const state={view:"ausgabe",ausgaben:[],datum:null,sp:new Set(),th:new Set(),firm:"",q:"",fav:{},favOnly:false};
+const FAV_TAGE=14,FAV_MAX=8;
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const fmtDate=d=>{const t=new Date(d+"T12:00:00");return isNaN(t)?d:`${WT[t.getDay()]}, ${t.toLocaleDateString("de-DE",{day:"2-digit",month:"2-digit",year:"numeric"})}`};
@@ -301,9 +317,28 @@ const firmsOf=m=>{const seen=new Set();return (m.unternehmen||[]).filter(u=>u&&u
 let READ=new Set(ls.get("3a-team-gelesen",[]));
 function saveRead(){ls.set("3a-team-gelesen",[...READ].slice(-5000))}
 function markRead(ids,val=true){for(const id of ids)val?READ.add(id):READ.delete(id);saveRead();render()}
-function loadPrefs(){const p=ls.get("3a-team-ansicht",{});state.sp=new Set(p.sp||[]);state.th=new Set(p.th||[]);state.q=p.q||"";state.firm=p.firm||"";state.view=p.view==="archiv"?"archiv":"ausgabe";state.fav=p.fav||{}}
-function savePrefs(){ls.set("3a-team-ansicht",{sp:[...state.sp],th:[...state.th],q:state.q,firm:state.firm,view:state.view,fav:state.fav})}
-function toggleFav(id,name){if(state.fav[id])delete state.fav[id];else state.fav[id]=name;savePrefs();render()}
+function loadPrefs(){const p=ls.get("3a-team-ansicht",{});state.sp=new Set(p.sp||[]);state.th=new Set(p.th||[]);state.q=p.q||"";state.firm=p.firm||"";state.view=p.view==="archiv"?"archiv":"ausgabe";state.fav=p.fav||{};state.favOnly=!!p.favOnly&&Object.keys(state.fav).length>0}
+function savePrefs(){ls.set("3a-team-ansicht",{sp:[...state.sp],th:[...state.th],q:state.q,firm:state.firm,view:state.view,fav:state.fav,favOnly:state.favOnly})}
+function toggleFav(id,name){if(state.fav[id])delete state.fav[id];else state.fav[id]=name;if(!Object.keys(state.fav).length)state.favOnly=false;savePrefs();render()}
+const isFav=m=>firmsOf(m).some(u=>state.fav[u.id]);
+
+/* Firmenlogos: nur eigene Dateien in logos/ (Liste in logos/index.json), sonst Initialen */
+let LOGOS=new Set();
+const STOP=new Set(["ag","se","gmbh","kg","vvag","ag.","deutschland","versicherung","versicherungen","versicherungsgruppe","gruppe","group","die","der","das","und","&","–","-"]);
+function initials(name){
+  const w=String(name||"").replace(/[+]/g," + ").split(/[\s/]+/).filter(x=>x&&!STOP.has(x.toLowerCase()));
+  if(!w.length)return "?";
+  if(w.length===1){const x=w[0].replace(/[^A-Za-zÄÖÜäöü0-9+]/g,"");return (x.length<=4&&x===x.toUpperCase()?x:x.slice(0,2)).toUpperCase()}
+  return (w[0][0]+w[1][0]).toUpperCase();
+}
+function logo(id,name,cls=""){
+  if(LOGOS.has(id))return `<span class="flogo img ${cls}" title="${esc(name)}"><img src="logos/${esc(id)}.png" alt="" loading="lazy"></span>`;
+  const t=initials(name);
+  return `<span class="flogo ${cls}${t.length>2?" l"+Math.min(t.length,4):""}" aria-hidden="true">${esc(t)}</span>`;
+}
+/* Alter einer Meldung relativ zu heute */
+function ageDays(d){if(!d)return null;const t=new Date(d.slice(0,10)+"T12:00:00"),n=new Date();n.setHours(12,0,0,0);return Math.round((n-t)/864e5)}
+function ageLabel(d){const x=ageDays(d);if(x==null)return "";if(x<=0)return "heute";if(x===1)return "gestern";return `vor ${x} Tagen`}
 
 function chips(el,map,set){
   el.innerHTML=Object.entries(map).map(([k,v])=>`<button class="chip" data-k="${k}" aria-pressed="${set.has(k)}">${esc(v)}</button>`).join("");
@@ -311,7 +346,8 @@ function chips(el,map,set){
 }
 function favChips(){
   const ids=Object.keys(state.fav);
-  $("f-fav").innerHTML=ids.map(id=>`<button class="chip" data-fav="${esc(id)}" aria-pressed="${state.firm===id}" title="Alle Meldungen zu ${esc(state.fav[id])}">★ ${esc(state.fav[id])}</button>`).join("");
+  $("f-fav").innerHTML=(ids.length>1?`<button class="chip" data-favall="1" aria-pressed="${state.favOnly}" title="Archiv nur mit Meldungen zu allen gemerkten Unternehmen">★ Alle meine Unternehmen</button>`:"")
+    +ids.map(id=>`<button class="chip" data-fav="${esc(id)}" aria-pressed="${state.firm===id}" title="Alle Meldungen zu ${esc(state.fav[id])}">${logo(id,state.fav[id],"sm")}${esc(state.fav[id])}</button>`).join("");
   $("fav-hint").hidden=ids.length>0;
 }
 
@@ -319,6 +355,7 @@ function matches(m){
   if(state.sp.size&&!(m.sparten||[]).some(s=>state.sp.has(s)))return false;
   if(state.th.size&&!(m.themen||[]).some(t=>state.th.has(t)))return false;
   if(state.firm&&!firmsOf(m).some(u=>u.id===state.firm))return false;
+  if(state.favOnly&&!isFav(m))return false;
   if(state.q){const h=`${m.titel} ${m.zusammenfassung} ${m.quelle} ${firmsOf(m).map(u=>u.name+" "+(u.konzern||"")).join(" ")}`.toLowerCase();
     if(!state.q.toLowerCase().split(/\s+/).filter(Boolean).every(w=>h.includes(w)))return false}
   return true;
@@ -328,7 +365,8 @@ const firmBtns=m=>firmsOf(m).map(u=>`<span style="white-space:nowrap"><button cl
 function itemHTML(m){
   const tags=(m.sparten||[]).map(s=>`<span class="tag">${esc(SPARTEN[s]||s)}</span>`).join("");
   const also=(m.auch||[]).length?`<span class="also">auch bei ${m.auch.map(a=>`<a href="${esc(a.l)}" target="_blank" rel="noopener">${esc(a.q)}</a>`).join(", ")}</span>`:"";
-  return `<article class="item${READ.has(m.id)?" read":""}" id="m-${esc(m.id)}"><h4><a href="${esc(m.link)}" target="_blank" rel="noopener" data-open="${esc(m.id)}">${esc(m.titel)}</a></h4>
+  const fv=isFav(m)&&!state.favOnly;
+  return `<article class="item${READ.has(m.id)?" read":""}${fv?" isfav":""}" id="m-${esc(m.id)}"><h4>${fv?`<span class="favmark" title="Betrifft eines Ihrer gemerkten Unternehmen">★ Meine Unternehmen</span> `:""}<a href="${esc(m.link)}" target="_blank" rel="noopener" data-open="${esc(m.id)}">${esc(m.titel)}</a></h4>
     ${m.zusammenfassung?`<p>${esc(m.zusammenfassung)}</p>`:""}
     <div class="tags"><span class="src">${esc(m.quelle)} · ${esc(ddmm(m.datum)+" "+(m.datum||"").slice(11,16))}</span>${firmBtns(m)}${tags}${also}<button class="rmark" data-act="read" data-id="${esc(m.id)}">${READ.has(m.id)?"Gelesen":"Als gelesen markieren"}</button></div></article>`;
 }
@@ -371,23 +409,30 @@ function heroStats(){
     +` · ${firms} Unternehmen genannt<button class="howbtn" id="howbtn" type="button">So entsteht die Ausgabe ›</button>`;
   $("howbtn").onclick=()=>openHow(a);
 }
-function activeFilters(){return [...[...state.sp].map(k=>SPARTEN[k]),...[...state.th].map(k=>THEMEN[k]),...(state.firm?[(firmIndex[state.firm]||{}).name||state.fav[state.firm]||state.firm]:[]),...(state.q?["„"+state.q+"“"]:[])]}
+function activeFilters(){return [...[...state.sp].map(k=>SPARTEN[k]),...[...state.th].map(k=>THEMEN[k]),...(state.firm?[(firmIndex[state.firm]||{}).name||state.fav[state.firm]||state.firm]:[]),...(state.favOnly?["Meine Unternehmen"]:[]),...(state.q?["„"+state.q+"“"]:[])]}
 function filterBar(hidden){const f=activeFilters();if(!f.length)return "";
   return `<div class="fbar"><span><b>Filter aktiv:</b> ${esc(f.join(", "))}${hidden>0?` · ${hidden} ${hidden===1?"Meldung":"Meldungen"} ausgeblendet`:""}</span><button class="rbtn" data-act="clearfilters">Alle Filter entfernen</button></div>`}
 
 function favBox(){
   const ids=Object.keys(state.fav);if(!ids.length)return "";
   const rows=[];const seen=new Set();
-  for(const a of state.ausgaben.slice(0,10))for(const m of a.meldungen||[])if(!seen.has(m.id)&&firmsOf(m).some(u=>state.fav[u.id])){seen.add(m.id);rows.push(m)}
-  const list=rows.slice(0,6);
-  return `<section class="favbox"><h3>Meine Unternehmen · neueste Meldungen</h3>${list.length?list.map(m=>`<div><a href="${esc(m.link)}" target="_blank" rel="noopener" data-open="${esc(m.id)}">${esc(m.titel)}</a> <small>${esc(m.quelle)} · ${esc(ddmm(m.datum))} · ${esc(firmsOf(m).filter(u=>state.fav[u.id]).map(u=>u.name).join(", "))}</small></div>`).join(""):`<span class="hint">Zu Ihren gemerkten Unternehmen gibt es in den letzten Ausgaben keine Meldung.</span>`}</section>`;
+  for(const a of state.ausgaben){
+    const ad=ageDays(a.datum);if(ad!=null&&ad>FAV_TAGE)break;
+    for(const m of a.meldungen||[])if(!seen.has(m.id)&&isFav(m)){const x=ageDays(m.datum||a.datum);if(x!=null&&x>FAV_TAGE)continue;seen.add(m.id);rows.push({m,d:m.datum||a.datum})}
+  }
+  rows.sort((x,y)=>String(y.d).localeCompare(String(x.d)));
+  const list=rows.slice(0,FAV_MAX);const rest=rows.length-list.length;
+  const row=({m,d})=>{const fs=firmsOf(m).filter(u=>state.fav[u.id]);const lbl=ageLabel(d);
+    return `<div class="frow">${fs[0]?logo(fs[0].id,fs[0].name):""}<div><a href="${esc(m.link)}" target="_blank" rel="noopener" data-open="${esc(m.id)}">${esc(m.titel)}</a><br><small><span class="age${lbl==="heute"?" neu":""}">${esc(lbl)}</span>${esc(m.quelle)} · ${esc(fs.map(u=>u.name).join(", "))}</small></div></div>`};
+  const more=`<button class="more" data-act="favarchiv">${rest>0?`${rest} weitere und ältere Meldungen im Archiv ›`:"Ältere Meldungen im Archiv ›"}</button>`;
+  return `<section class="favbox"><h3>Meine Unternehmen · letzte ${FAV_TAGE} Tage</h3>${list.length?list.map(row).join(""):`<span class="hint">Zu Ihren gemerkten Unternehmen gab es in den letzten ${FAV_TAGE} Tagen keine Meldung.</span>`}${more}</section>`;
 }
 
 function renderAusgabe(){
   const a=current();if(!a)return emptyHTML();
   const all=a.meldungen||[];const list=all.filter(matches);const tops=all.filter(m=>m.top);
   let h=filterBar(all.filter(m=>!m.top).length-list.filter(m=>!m.top).length);
-  if(tops.length)h+=`<section><div class="sechead"><h2>Top-Themen</h2><span class="meta">${esc(fmtDate(a.datum))}</span></div><div class="tops">${tops.map(m=>`<article class="topcard${READ.has(m.id)?" read":""}"><span class="kicker">${esc(THEMEN[(m.themen||[])[0]]||"")}</span><h3><a href="${esc(m.link)}" target="_blank" rel="noopener" data-open="${esc(m.id)}">${esc(m.titel)}</a></h3>${m.zusammenfassung?`<p>${esc(m.zusammenfassung)}</p>`:""}<div class="tags"><span class="src">${esc(m.quelle)}</span>${firmBtns(m)}</div></article>`).join("")}</div></section>`;
+  if(tops.length)h+=`<section><div class="sechead"><h2>Top-Themen</h2><span class="meta">${esc(fmtDate(a.datum))}</span></div><div class="tops">${tops.map(m=>`<article class="topcard${READ.has(m.id)?" read":""}${isFav(m)?" isfav":""}"><span class="kicker">${isFav(m)?`<span class="favmark">★ Meine Unternehmen</span> `:""}${esc(THEMEN[(m.themen||[])[0]]||"")}</span><h3><a href="${esc(m.link)}" target="_blank" rel="noopener" data-open="${esc(m.id)}">${esc(m.titel)}</a></h3>${m.zusammenfassung?`<p>${esc(m.zusammenfassung)}</p>`:""}<div class="tags"><span class="src">${esc(m.quelle)}</span>${firmBtns(m)}</div></article>`).join("")}</div></section>`;
   h+=favBox();
   const rest=list.filter(m=>!m.top);const restAll=all.filter(m=>!m.top);
   const unread=list.filter(m=>!READ.has(m.id)).length;
@@ -411,7 +456,8 @@ function renderArchiv(){
   }
   const f=state.firm?firmIndex[state.firm]:null;
   const star=f?` <button class="star${state.fav[f.id]?" on":""}" data-star="${esc(f.id)}" data-name="${esc(f.name)}" style="font-size:20px">${state.fav[f.id]?"★":"☆"}</button>`:"";
-  const head=`<div class="sechead"><h2>${f?esc(f.name)+star:"Archiv"}</h2><span class="meta">${total} Meldungen in ${state.ausgaben.length} Ausgaben</span></div>`;
+  const title=f?logo(f.id,f.name,"lg")+esc(f.name)+star:state.favOnly?"Meine Unternehmen":"Archiv";
+  const head=`<div class="sechead"><h2>${title}</h2><span class="meta">${total} Meldungen in ${state.ausgaben.length} Ausgaben</span></div>`;
   $("foot-status").textContent="";
   return filterBar(0)+`<section>${head}${h||`<div class="empty"><h3>Nichts gefunden</h3><p>Versuchen Sie einen anderen Suchbegriff oder entfernen Sie Filter.</p></div>`}</section>`;
 }
@@ -432,7 +478,7 @@ function buildAusgabeSelect(){
 function render(){
   for(const v of ["ausgabe","archiv"])$("tab-"+v).setAttribute("aria-pressed",state.view===v);
   $("g-ausgabe").hidden=state.view!=="ausgabe";
-  $("reset-sp").hidden=!state.sp.size;$("reset-th").hidden=!state.th.size;$("reset-u").hidden=!state.firm;
+  $("reset-sp").hidden=!state.sp.size;$("reset-th").hidden=!state.th.size;$("reset-u").hidden=!state.firm&&!state.favOnly;
   $("q").value!==state.q&&document.activeElement!==$("q")&&($("q").value=state.q);
   favChips();heroStats();
   $("main").innerHTML=state.view==="ausgabe"?renderAusgabe():renderArchiv();
@@ -440,12 +486,14 @@ function render(){
 
 for(const v of ["ausgabe","archiv"])$("tab-"+v).onclick=()=>{state.view=v;savePrefs();render()};
 $("sel-ausgabe").onchange=e=>{state.datum=e.target.value;render()};
-$("sel-firm").onchange=e=>{state.firm=e.target.value;if(state.firm)state.view="archiv";savePrefs();render()};
+$("sel-firm").onchange=e=>{state.firm=e.target.value;if(state.firm){state.favOnly=false;state.view="archiv"}savePrefs();render()};
 let qt;$("q").oninput=e=>{clearTimeout(qt);qt=setTimeout(()=>{state.q=e.target.value.trim();savePrefs();render()},200)};
 $("reset-sp").onclick=()=>{state.sp.clear();chips($("f-sparten"),SPARTEN,state.sp);savePrefs();render()};
 $("reset-th").onclick=()=>{state.th.clear();chips($("f-themen"),THEMEN,state.th);savePrefs();render()};
-$("reset-u").onclick=()=>{state.firm="";$("sel-firm").value="";savePrefs();render()};
-$("f-fav").onclick=e=>{const b=e.target.closest("[data-fav]");if(!b)return;const id=b.dataset.fav;state.firm=state.firm===id?"":id;if(state.firm)state.view="archiv";savePrefs();render()};
+$("reset-u").onclick=()=>{state.firm="";state.favOnly=false;$("sel-firm").value="";savePrefs();render()};
+$("f-fav").onclick=e=>{
+  if(e.target.closest("[data-favall]")){state.favOnly=!state.favOnly;if(state.favOnly){state.firm="";$("sel-firm").value="";state.view="archiv"}savePrefs();render();return}
+  const b=e.target.closest("[data-fav]");if(!b)return;const id=b.dataset.fav;state.firm=state.firm===id?"":id;if(state.firm){state.favOnly=false;state.view="archiv"}savePrefs();render()};
 $("fsum").onclick=()=>{const o=$("fwrap").classList.toggle("open");$("fsum").setAttribute("aria-expanded",o)};
 function openMark(e){const o=e.target.closest("[data-open]");if(o&&!READ.has(o.dataset.open)){READ.add(o.dataset.open);saveRead();setTimeout(render,300)}}
 $("main").addEventListener("auxclick",openMark);
@@ -454,9 +502,10 @@ $("main").addEventListener("click",e=>{openMark(e);
   const b=e.target.closest("[data-act]");if(b){const act=b.dataset.act;
     if(act==="read")markRead([b.dataset.id],!READ.has(b.dataset.id));
     else if(act==="readall"){const a=current();markRead((a?.meldungen||[]).filter(matches).map(m=>m.id))}
-    else if(act==="clearfilters"){state.sp.clear();state.th.clear();state.firm="";state.q="";$("q").value="";$("sel-firm").value="";chips($("f-sparten"),SPARTEN,state.sp);chips($("f-themen"),THEMEN,state.th);savePrefs();render()}
+    else if(act==="favarchiv"){state.favOnly=true;state.firm="";$("sel-firm").value="";state.view="archiv";savePrefs();render();window.scrollTo({top:0})}
+    else if(act==="clearfilters"){state.sp.clear();state.th.clear();state.firm="";state.favOnly=false;state.q="";$("q").value="";$("sel-firm").value="";chips($("f-sparten"),SPARTEN,state.sp);chips($("f-themen"),THEMEN,state.th);savePrefs();render()}
     return}
-  const f=e.target.closest("[data-firm]");if(!f)return;state.firm=f.dataset.firm;state.view="archiv";$("sel-firm").value=state.firm;savePrefs();render();window.scrollTo({top:0})});
+  const f=e.target.closest("[data-firm]");if(!f)return;state.firm=f.dataset.firm;state.favOnly=false;state.view="archiv";$("sel-firm").value=state.firm;savePrefs();render();window.scrollTo({top:0})});
 
 /* Entschlüsselung: AES-256-GCM, Schlüssel per PBKDF2-SHA256 aus dem Passwort */
 const b64=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
@@ -472,6 +521,7 @@ const getJSON=async p=>{const r=await fetch(p,{cache:"no-store"});if(!r.ok)throw
 
 async function loadData(){
   try{QUELLEN=(await getJSON("quellen.json")).quellen||[]}catch(e){QUELLEN=[]}
+  try{LOGOS=new Set((await getJSON("logos/index.json")).logos||[])}catch(e){LOGOS=new Set()}
   const idx=await getJSON("data/index.json");
   const list=(idx.ausgaben||[]).slice(0,MAX_AUSGABEN);
   const out=[];
