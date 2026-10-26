@@ -48,7 +48,8 @@ button,input,select,textarea{font:inherit;color:inherit}
 .stat span{margin-left:4px}
 .funnel-line{font-size:14px;line-height:1.45;opacity:.97}
 .funnel-line b{font-weight:700;font-variant-numeric:tabular-nums}
-.howbtn{background:none;border:0;padding:0;margin-left:6px;color:inherit;font:inherit;font-weight:600;text-decoration:underline;text-underline-offset:3px;cursor:pointer;white-space:nowrap}
+.howbtn{background:none;border:0;padding:0 2px;margin-left:6px;color:inherit;font-size:17px;line-height:1;cursor:pointer;vertical-align:-1px;opacity:.95}
+.howbtn:hover{opacity:1}
 .howbtn:focus-visible{outline:2px solid #fff;outline-offset:2px}
 dialog.how{border:0;padding:0;max-width:760px;width:calc(100% - 32px);max-height:calc(100% - 48px);box-shadow:0 18px 50px rgba(0,0,0,.25);color:var(--ink)}
 dialog.how::backdrop{background:rgba(26,26,26,.45)}
@@ -198,18 +199,12 @@ footer::before{content:"3A";position:absolute;left:0;top:14px;background:var(--r
 .favbox a{text-decoration:none;font-weight:600}
 .favbox a:hover{text-decoration:underline;text-decoration-color:var(--red)}
 .favbox small{color:var(--muted);font-weight:400}
-.favbox .frow{display:flex;gap:10px;align-items:flex-start}
+.favbox .frow{display:flex;flex-direction:column;gap:1px}
+.favbox .ffirm{font-size:11.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--petrol)}
 .favbox .more{align-self:flex-start;border:0;background:none;padding:0;color:var(--red);font-weight:600;cursor:pointer;font-size:13px}
 .favbox .more:hover{text-decoration:underline}
 .age{display:inline-block;font-size:11.5px;font-weight:700;color:var(--petrol);background:var(--white);padding:0 6px;margin-right:4px;white-space:nowrap}
 .age.neu{background:var(--mustard);color:var(--ink)}
-.flogo{flex:none;display:inline-grid;place-items:center;width:26px;height:26px;background:var(--petrol);color:var(--white);font-size:10.5px;font-weight:800;letter-spacing:.02em;line-height:1;overflow:hidden;vertical-align:middle}
-.flogo.img{background:var(--white);border:1px solid var(--line)}
-.flogo img{width:100%;height:100%;object-fit:contain;display:block}
-.flogo.sm{width:20px;height:20px;font-size:9px;margin-right:4px}
-.flogo.lg{width:34px;height:34px;font-size:13px;margin-right:8px}
-.flogo.l3{font-size:8.5px}.flogo.l4{font-size:7px;letter-spacing:0}.flogo.sm.l3{font-size:7px}.flogo.sm.l4{font-size:6px}.flogo.lg.l3{font-size:11px}.flogo.lg.l4{font-size:9.5px}
-.chip .flogo{margin-right:4px}
 .item.isfav{border-left:4px solid var(--mustard);padding-left:12px}
 .topcard.isfav{box-shadow:inset 4px 0 0 var(--mustard)}
 .favmark{font-size:11.5px;font-weight:700;color:var(--ink);background:var(--mustard);padding:0 6px;white-space:nowrap}
@@ -304,7 +299,7 @@ const WT=["So","Mo","Di","Mi","Do","Fr","Sa"];
 const MAX_AUSGABEN=250;
 
 const state={view:"ausgabe",ausgaben:[],datum:null,sp:new Set(),th:new Set(),firm:"",q:"",fav:{},favOnly:false};
-const FAV_TAGE=14,FAV_MAX=8;
+const FAV_TAGE=7,FAV_MAX=6;
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const fmtDate=d=>{const t=new Date(d+"T12:00:00");return isNaN(t)?d:`${WT[t.getDay()]}, ${t.toLocaleDateString("de-DE",{day:"2-digit",month:"2-digit",year:"numeric"})}`};
@@ -323,21 +318,6 @@ function savePrefs(){ls.set("3a-team-ansicht",{sp:[...state.sp],th:[...state.th]
 function toggleFav(id,name){if(state.fav[id])delete state.fav[id];else state.fav[id]=name;if(!Object.keys(state.fav).length)state.favOnly=false;savePrefs();render()}
 const isFav=m=>firmsOf(m).some(u=>state.fav[u.id]);
 
-/* Firmenlogos: verschluesselt in data/logos.enc.json (nur nach Passworteingabe), sonst Initialen */
-let LOGOS={};
-const STOP=new Set(["ag","se","gmbh","kg","vvag","ag.","deutschland","versicherung","versicherungen","versicherungsgruppe","gruppe","group","die","der","das","und","&","–","-"]);
-function initials(name){
-  const w=String(name||"").replace(/[+]/g," + ").split(/[\s/]+/).filter(x=>x&&!STOP.has(x.toLowerCase()));
-  if(!w.length)return "?";
-  if(w.length===1){const x=w[0].replace(/[^A-Za-zÄÖÜäöü0-9+]/g,"");return (x.length<=4&&x===x.toUpperCase()?x:x.slice(0,2)).toUpperCase()}
-  return (w[0][0]+w[1][0]).toUpperCase();
-}
-function logo(id,name,cls=""){
-  const src=LOGOS[id];
-  if(src&&/^data:image\/(png|jpeg|webp|svg\+xml);base64,/.test(src))return `<span class="flogo img ${cls}" title="${esc(name)}"><img src="${src}" alt=""></span>`;
-  const t=initials(name);
-  return `<span class="flogo ${cls}${t.length>2?" l"+Math.min(t.length,4):""}" aria-hidden="true">${esc(t)}</span>`;
-}
 /* Alter einer Meldung relativ zu heute */
 function ageDays(d){if(!d)return null;const t=new Date(d.slice(0,10)+"T12:00:00"),n=new Date();n.setHours(12,0,0,0);return Math.round((n-t)/864e5)}
 function ageLabel(d){const x=ageDays(d);if(x==null)return "";if(x<=0)return "heute";if(x===1)return "gestern";return `vor ${x} Tagen`}
@@ -349,7 +329,7 @@ function chips(el,map,set){
 function favChips(){
   const ids=Object.keys(state.fav);
   $("f-fav").innerHTML=(ids.length>1?`<button class="chip" data-favall="1" aria-pressed="${state.favOnly}" title="Archiv nur mit Meldungen zu allen gemerkten Unternehmen">★ Alle meine Unternehmen</button>`:"")
-    +ids.map(id=>`<button class="chip" data-fav="${esc(id)}" aria-pressed="${state.firm===id}" title="Alle Meldungen zu ${esc(state.fav[id])}">${logo(id,state.fav[id],"sm")}${esc(state.fav[id])}</button>`).join("");
+    +ids.map(id=>`<button class="chip" data-fav="${esc(id)}" aria-pressed="${state.firm===id}" title="Alle Meldungen zu ${esc(state.fav[id])}">${esc(state.fav[id])}</button>`).join("");
   $("fav-hint").hidden=ids.length>0;
 }
 
@@ -405,10 +385,8 @@ function heroStats(){
   const a=current();
   $("hero-eyebrow").textContent=a?`Interner Branchenüberblick · Ausgabe ${fmtDate(a.datum)}`:"Interner Branchenüberblick · Mo–Fr";
   if(!a){$("hero-stats").innerHTML="";return}
-  const ms=a.meldungen||[];const firms=new Set(ms.flatMap(m=>firmsOf(m).map(u=>u.id))).size;const qs=new Set(ms.map(m=>m.quelle)).size;
-  const nq=QUELLEN.length;const nk=a.kandidaten;
-  $("hero-stats").innerHTML=`<b>${ms.length} Meldungen</b> ausgewählt`+(nk!=null?` aus <b>${esc(nk)} neuen Beiträgen</b>`:"")+(nq?` von <b>${nq} beobachteten Quellen</b>`:"")
-    +` · ${firms} Unternehmen genannt<button class="howbtn" id="howbtn" type="button">So entsteht die Ausgabe ›</button>`;
+  const ms=a.meldungen||[];const qs=new Set(ms.map(m=>m.quelle)).size;
+  $("hero-stats").innerHTML=`<b>${ms.length} Meldungen</b> aus <b>${qs} Quellen</b><button class="howbtn" id="howbtn" type="button" aria-label="So entsteht die Ausgabe" title="So entsteht die Ausgabe">ⓘ</button>`;
   $("howbtn").onclick=()=>openHow(a);
 }
 function activeFilters(){return [...[...state.sp].map(k=>SPARTEN[k]),...[...state.th].map(k=>THEMEN[k]),...(state.firm?[(firmIndex[state.firm]||{}).name||state.fav[state.firm]||state.firm]:[]),...(state.favOnly?["Meine Unternehmen"]:[]),...(state.q?["„"+state.q+"“"]:[])]}
@@ -425,7 +403,7 @@ function favBox(){
   rows.sort((x,y)=>String(y.d).localeCompare(String(x.d)));
   const list=rows.slice(0,FAV_MAX);const rest=rows.length-list.length;
   const row=({m,d})=>{const fs=firmsOf(m).filter(u=>state.fav[u.id]);const lbl=ageLabel(d);
-    return `<div class="frow">${fs[0]?logo(fs[0].id,fs[0].name):""}<div><a href="${esc(m.link)}" target="_blank" rel="noopener" data-open="${esc(m.id)}">${esc(m.titel)}</a><br><small><span class="age${lbl==="heute"?" neu":""}">${esc(lbl)}</span>${esc(m.quelle)} · ${esc(fs.map(u=>u.name).join(", "))}</small></div></div>`};
+    return `<div class="frow"><span class="ffirm">${esc(fs.map(u=>u.name).join(", "))}</span><a href="${esc(m.link)}" target="_blank" rel="noopener" data-open="${esc(m.id)}">${esc(m.titel)}</a><small><span class="age${lbl==="heute"?" neu":""}">${esc(lbl)}</span>${esc(m.quelle)}</small></div>`};
   const more=`<button class="more" data-act="favarchiv">${rest>0?`${rest} weitere und ältere Meldungen im Archiv ›`:"Ältere Meldungen im Archiv ›"}</button>`;
   return `<section class="favbox"><h3>Meine Unternehmen · letzte ${FAV_TAGE} Tage</h3>${list.length?list.map(row).join(""):`<span class="hint">Zu Ihren gemerkten Unternehmen gab es in den letzten ${FAV_TAGE} Tagen keine Meldung.</span>`}${more}</section>`;
 }
@@ -458,7 +436,7 @@ function renderArchiv(){
   }
   const f=state.firm?firmIndex[state.firm]:null;
   const star=f?` <button class="star${state.fav[f.id]?" on":""}" data-star="${esc(f.id)}" data-name="${esc(f.name)}" style="font-size:20px">${state.fav[f.id]?"★":"☆"}</button>`:"";
-  const title=f?logo(f.id,f.name,"lg")+esc(f.name)+star:state.favOnly?"Meine Unternehmen":"Archiv";
+  const title=f?esc(f.name)+star:state.favOnly?"Meine Unternehmen":"Archiv";
   const head=`<div class="sechead"><h2>${title}</h2><span class="meta">${total} Meldungen in ${state.ausgaben.length} Ausgaben</span></div>`;
   $("foot-status").textContent="";
   return filterBar(0)+`<section>${head}${h||`<div class="empty"><h3>Nichts gefunden</h3><p>Versuchen Sie einen anderen Suchbegriff oder entfernen Sie Filter.</p></div>`}</section>`;
@@ -526,7 +504,6 @@ const getJSON=async p=>{const r=await fetch(p,{cache:"no-store"});if(!r.ok)throw
 
 async function loadData(){
   try{QUELLEN=(await getJSON("quellen.json")).quellen||[]}catch(e){QUELLEN=[]}
-  try{LOGOS=(await dec(KEY,await getJSON("data/logos.enc.json"))).logos||{}}catch(e){LOGOS={}}
   const idx=await getJSON("data/index.json");
   const list=(idx.ausgaben||[]).slice(0,MAX_AUSGABEN);
   const out=[];
