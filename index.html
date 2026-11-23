@@ -131,7 +131,12 @@ section{display:flex;flex-direction:column;gap:14px}
 .jump b{color:var(--red);margin-left:4px;font-variant-numeric:tabular-nums}
 .block{gap:0;scroll-margin-top:16px}
 .block>h3{align-self:flex-start;margin:10px 0 4px;font-weight:600;font-size:12.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--white);background:var(--petrol);padding:5px 26px 5px 12px;clip-path:polygon(0 0,calc(100% - 14px) 0,100% 50%,calc(100% - 14px) 100%,0 100%)}
-.item{display:grid;grid-template-columns:minmax(0,1fr);gap:4px;padding:12px 0;border-bottom:1px solid var(--line)}
+.item{display:grid;grid-template-columns:26px minmax(0,1fr);column-gap:10px;padding:12px 0;border-bottom:1px solid var(--line)}
+.item .ibody{display:grid;grid-template-columns:minmax(0,1fr);gap:4px;min-width:0}
+.pwcol{width:26px;padding-top:1px}
+.pw{display:flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:50%;background:#F0F0F0;color:#6B6B6B}
+.pwmini{display:inline-flex;vertical-align:-1px;margin-left:3px;color:#6B6B6B}
+.how-lock{display:flex;align-items:center;gap:8px}
 .item h4{margin:0;font-weight:600;font-size:15.5px;line-height:1.35;overflow-wrap:break-word;hyphens:auto}
 .item p{margin:0;max-width:80ch}
 .item.read h4,.item.read p{color:var(--muted)}
@@ -344,13 +349,19 @@ function matches(m){
 }
 const firmBtns=m=>firmsOf(m).map(u=>`<span style="white-space:nowrap"><button class="firm" data-firm="${esc(u.id)}" title="Alle Meldungen zu ${esc(u.name)}">${esc(u.name)}</button><button class="star${state.fav[u.id]?" on":""}" data-star="${esc(u.id)}" data-name="${esc(u.name)}" title="${state.fav[u.id]?"Aus meinen Unternehmen entfernen":"Zu meinen Unternehmen hinzufügen"}" aria-label="${state.fav[u.id]?"Aus meinen Unternehmen entfernen":"Zu meinen Unternehmen hinzufügen"}">${state.fav[u.id]?"★":"☆"}</button></span>`).join("");
 
+// Paywall-Hinweis: gezeichnetes Schloss (Inline-SVG). Aeltere Ausgaben ohne Feld "paywall" -> kein Schloss.
+const LOCK=px=>`<svg width="${px}" height="${px}" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M5.2 7V5.3a2.8 2.8 0 0 1 5.6 0V7" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><rect x="3.6" y="7" width="8.8" height="6.6" rx="1.4" fill="currentColor"/></svg>`;
+const PW_TXT="Paywall: Der Originalartikel ist nur mit Abo vollständig lesbar.";
+const pwCircle=()=>`<span class="pw" role="img" aria-label="${PW_TXT}" title="${PW_TXT}">${LOCK(13)}</span>`;
+const pwMini=on=>on===true?`<span class="pwmini" role="img" aria-label="${PW_TXT}" title="${PW_TXT}">${LOCK(11)}</span>`:"";
+
 function itemHTML(m){
   const tags=(m.sparten||[]).map(s=>`<span class="tag">${esc(SPARTEN[s]||s)}</span>`).join("");
-  const also=(m.auch||[]).length?`<span class="also">auch bei ${m.auch.map(a=>`<a href="${esc(a.l)}" target="_blank" rel="noopener">${esc(a.q)}</a>`).join(", ")}</span>`:"";
+  const also=(m.auch||[]).length?`<span class="also">auch bei ${m.auch.map(a=>`<a href="${esc(a.l)}" target="_blank" rel="noopener">${esc(a.q)}</a>${pwMini(a.paywall)}`).join(", ")}</span>`:"";
   const fv=isFav(m)&&!state.favOnly;
-  return `<article class="item${READ.has(m.id)?" read":""}${fv?" isfav":""}" id="m-${esc(m.id)}"><h4>${fv?`<span class="favmark" title="Betrifft eines Ihrer gemerkten Unternehmen">★ Meine Unternehmen</span> `:""}<a href="${esc(m.link)}" target="_blank" rel="noopener" data-open="${esc(m.id)}">${esc(m.titel)}</a></h4>
+  return `<article class="item${READ.has(m.id)?" read":""}${fv?" isfav":""}" id="m-${esc(m.id)}"><span class="pwcol">${m.paywall===true?pwCircle():""}</span><div class="ibody"><h4>${fv?`<span class="favmark" title="Betrifft eines Ihrer gemerkten Unternehmen">★ Meine Unternehmen</span> `:""}<a href="${esc(m.link)}" target="_blank" rel="noopener" data-open="${esc(m.id)}">${esc(m.titel)}</a></h4>
     ${m.zusammenfassung?`<p>${esc(m.zusammenfassung)}</p>`:""}
-    <div class="tags"><span class="src">${esc(m.quelle)} · ${esc(ddmm(m.datum)+" "+(m.datum||"").slice(11,16))}</span>${firmBtns(m)}${tags}${also}<button class="rmark" data-act="read" data-id="${esc(m.id)}">${READ.has(m.id)?"Gelesen":"Als gelesen markieren"}</button></div></article>`;
+    <div class="tags"><span class="src">${esc(m.quelle)} · ${esc(ddmm(m.datum)+" "+(m.datum||"").slice(11,16))}</span>${firmBtns(m)}${tags}${also}<button class="rmark" data-act="read" data-id="${esc(m.id)}">${READ.has(m.id)?"Gelesen":"Als gelesen markieren"}</button></div></div></article>`;
 }
 
 function openHow(a){
@@ -375,6 +386,7 @@ function openHow(a){
     </ul>
     <h3>Beobachtete Quellen <span style="font-weight:400;color:var(--muted);font-size:13px">– heute in der Ausgabe vertreten: ${heute.size} (hervorgehoben)</span></h3>
     ${gruppen.filter(([,qs])=>qs.length).map(([t,qs])=>`<div class="qgroup"><p>${esc(t)}</p><div class="qchips">${qs.map(chip).join("")}</div></div>`).join("")}
+    <p class="how-note how-lock">${pwCircle()}<span>Schloss-Symbol: Der Originalartikel ist nur mit Abo vollständig lesbar.</span></p>
     <p class="how-note">Viele Quellen veröffentlichen nicht täglich (z.&nbsp;B. EIOPA, Ratingagenturen, Datenschutzbehörden). Auswahl und Zusammenfassungen sind KI-gestützt erstellt; maßgeblich ist immer die verlinkte Originalquelle.</p>`;
   const d=$("how");if(d.showModal)d.showModal();else d.setAttribute("open","");
 }
@@ -403,7 +415,7 @@ function favBox(){
   rows.sort((x,y)=>String(y.d).localeCompare(String(x.d)));
   const list=rows.slice(0,FAV_MAX);const rest=rows.length-list.length;
   const row=({m,d})=>{const fs=firmsOf(m).filter(u=>state.fav[u.id]);const lbl=ageLabel(d);
-    return `<div class="frow"><span class="ffirm">${esc(fs.map(u=>u.name).join(", "))}</span><a href="${esc(m.link)}" target="_blank" rel="noopener" data-open="${esc(m.id)}">${esc(m.titel)}</a><small><span class="age${lbl==="heute"?" neu":""}">${esc(lbl)}</span>${esc(m.quelle)}</small></div>`};
+    return `<div class="frow"><span class="ffirm">${esc(fs.map(u=>u.name).join(", "))}</span><a href="${esc(m.link)}" target="_blank" rel="noopener" data-open="${esc(m.id)}">${esc(m.titel)}</a><small><span class="age${lbl==="heute"?" neu":""}">${esc(lbl)}</span>${esc(m.quelle)}${pwMini(m.paywall)}</small></div>`};
   const more=`<button class="more" data-act="favarchiv">${rest>0?`${rest} weitere und ältere Meldungen im Archiv ›`:"Ältere Meldungen im Archiv ›"}</button>`;
   return `<section class="favbox"><h3>Meine Unternehmen · letzte ${FAV_TAGE} Tage</h3>${list.length?list.map(row).join(""):`<span class="hint">Zu Ihren gemerkten Unternehmen gab es in den letzten ${FAV_TAGE} Tagen keine Meldung.</span>`}${more}</section>`;
 }
@@ -412,7 +424,7 @@ function renderAusgabe(){
   const a=current();if(!a)return emptyHTML();
   const all=a.meldungen||[];const list=all.filter(matches);const tops=all.filter(m=>m.top);
   let h=filterBar(all.filter(m=>!m.top).length-list.filter(m=>!m.top).length);
-  if(tops.length)h+=`<section><div class="sechead"><h2>Top-Themen</h2><span class="meta">${esc(fmtDate(a.datum))}</span></div><div class="tops">${tops.map(m=>`<article class="topcard${READ.has(m.id)?" read":""}${isFav(m)?" isfav":""}"><span class="kicker">${isFav(m)?`<span class="favmark">★ Meine Unternehmen</span> `:""}${esc(THEMEN[(m.themen||[])[0]]||"")}</span><h3><a href="${esc(m.link)}" target="_blank" rel="noopener" data-open="${esc(m.id)}">${esc(m.titel)}</a></h3>${m.zusammenfassung?`<p>${esc(m.zusammenfassung)}</p>`:""}<div class="tags"><span class="src">${esc(m.quelle)}</span>${firmBtns(m)}</div></article>`).join("")}</div></section>`;
+  if(tops.length)h+=`<section><div class="sechead"><h2>Top-Themen</h2><span class="meta">${esc(fmtDate(a.datum))}</span></div><div class="tops">${tops.map(m=>`<article class="topcard${READ.has(m.id)?" read":""}${isFav(m)?" isfav":""}"><span class="kicker">${isFav(m)?`<span class="favmark">★ Meine Unternehmen</span> `:""}${esc(THEMEN[(m.themen||[])[0]]||"")}</span><h3><a href="${esc(m.link)}" target="_blank" rel="noopener" data-open="${esc(m.id)}">${esc(m.titel)}</a></h3>${m.zusammenfassung?`<p>${esc(m.zusammenfassung)}</p>`:""}<div class="tags"><span class="src">${esc(m.quelle)}${pwMini(m.paywall)}</span>${firmBtns(m)}</div></article>`).join("")}</div></section>`;
   h+=favBox();
   const rest=list.filter(m=>!m.top);const restAll=all.filter(m=>!m.top);
   const unread=list.filter(m=>!READ.has(m.id)).length;
