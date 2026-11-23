@@ -135,6 +135,7 @@ section{display:flex;flex-direction:column;gap:14px}
 .item .ibody{display:grid;grid-template-columns:minmax(0,1fr);gap:4px;min-width:0}
 .pwcol{width:26px;padding-top:1px}
 .pw{display:flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:50%;background:#F0F0F0;color:#6B6B6B}
+.pw svg,.pwmini svg,.pwtop svg{pointer-events:none} /* Mouse-over immer vom Element mit title */
 .pwmini{display:inline-flex;vertical-align:-1px;margin-left:3px;color:#6B6B6B}
 .pwtop{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;background:#FFFFFF;color:#6B6B6B;vertical-align:middle;margin:-4px 0 -4px 6px;cursor:help}
 .how-lock{display:flex;align-items:center;gap:8px}
@@ -378,9 +379,9 @@ const firmBtns=m=>firmsOf(m).map(u=>`<span style="white-space:nowrap"><button cl
 
 // Paywall-Hinweis: gezeichnetes Schloss (Inline-SVG). Aeltere Ausgaben ohne Feld "paywall" -> kein Schloss.
 const LOCK=px=>`<svg width="${px}" height="${px}" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M5.2 7V5.3a2.8 2.8 0 0 1 5.6 0V7" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><rect x="3.6" y="7" width="8.8" height="6.6" rx="1.4" fill="currentColor"/></svg>`;
-const PW_TXT="Paywall: Der Originalartikel ist nur mit Abo vollständig lesbar.";
+const PW_TXT="Artikel liegt hinter einer Paywall";
 const pwCircle=()=>`<span class="pw" role="img" aria-label="${PW_TXT}" title="${PW_TXT}">${LOCK(13)}</span>`;
-const PW_TOP="Artikel liegt hinter einer Paywall";
+const PW_TOP=PW_TXT;
 const pwTop=on=>on===true?`<span class="pwtop" role="img" aria-label="${PW_TOP}" title="${PW_TOP}">${LOCK(14)}</span>`:"";
 const pwMini=on=>on===true?`<span class="pwmini" role="img" aria-label="${PW_TXT}" title="${PW_TXT}">${LOCK(11)}</span>`:"";
 
