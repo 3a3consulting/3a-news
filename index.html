@@ -138,6 +138,22 @@ section{display:flex;flex-direction:column;gap:14px}
 .pwmini{display:inline-flex;vertical-align:-1px;margin-left:3px;color:#6B6B6B}
 .pwtop{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;background:#FFFFFF;color:#6B6B6B;vertical-align:middle;margin:-4px 0 -4px 6px;cursor:help}
 .how-lock{display:flex;align-items:center;gap:8px}
+.stat-tiles{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+@media (max-width:560px){.stat-tiles{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.stat-tiles .st{background:var(--grey);padding:12px}
+.stat-tiles b{display:block;font-size:28px;line-height:1.1;color:var(--petrol);font-variant-numeric:tabular-nums}
+.stat-tiles span{display:block;font-size:13px;margin-top:4px;color:var(--ink)}
+.stat-tiles small{display:block;font-size:12px;color:var(--muted)}
+.stat-form{display:flex;flex-direction:column;gap:8px;max-width:360px}
+.stat-err{color:var(--red);font-size:13px;min-height:1em;margin:0}
+.stat-chart svg{display:block;width:100%;height:auto}
+.stat-chart .bar{fill:var(--petrol)}.stat-chart .bar.heute{fill:#5FB7A6}
+.stat-chart .hit:hover+.bar,.stat-chart .hit:focus-visible+.bar{fill:var(--red)}
+.stat-chart .hit{outline:none}
+.stat-chart text{font-size:11px;fill:var(--muted);font-variant-numeric:tabular-nums}
+.stat-chart .grid{stroke:var(--line);stroke-width:1}
+.stat-table{border-collapse:collapse;font-size:13px;margin-top:8px;font-variant-numeric:tabular-nums}
+.stat-table th,.stat-table td{padding:3px 12px 3px 0;text-align:right}.stat-table th:first-child,.stat-table td:first-child{text-align:left}
 .item h4{margin:0;font-weight:600;font-size:15.5px;line-height:1.35;overflow-wrap:break-word;hyphens:auto}
 .item p{margin:0;max-width:80ch}
 .item.read h4,.item.read p{color:var(--muted)}
@@ -253,6 +269,12 @@ footer::before{content:"3A";position:absolute;left:0;top:14px;background:var(--r
   <div class="how-body" id="how-body"></div>
 </dialog>
 
+<dialog class="how" id="stat" aria-labelledby="stat-title">
+  <div class="how-head"><div><span class="eyebrow">Admin</span><h2 id="stat-title">Nutzung des Dashboards</h2></div>
+    <button class="x" id="stat-close" aria-label="Schließen">&times;</button></div>
+  <div class="how-body" id="stat-body"></div>
+</dialog>
+
 <div class="inner">
   <div class="page">
     <div class="fwrap" id="fwrap"><button class="fsum" id="fsum" aria-expanded="false" aria-controls="filters">Filter und Suche</button>
@@ -298,6 +320,10 @@ footer::before{content:"3A";position:absolute;left:0;top:14px;background:var(--r
 </div>
 
 <script>
+/* Nutzungszaehler (anonym, nur Tageszahlen; Einrichtung: 3a-news-redaktion/zaehler/README.md).
+   Adresse des Cloudflare-Workers ohne "/" am Ende, z. B. "https://3a-news-zaehler.<konto>.workers.dev".
+   Leer = Zaehler aus: es wird nichts gesendet. */
+const ZAEHLER_URL="";
 const SPARTEN={leben:"Leben",kranken:"Kranken/PKV",komp_privat:"Komposit Privat",komp_gewerbe:"Komposit Gewerbe",rueck:"Rück",uebergreifend:"Übergreifend"};
 const THEMEN={aufsicht:"Aufsicht & Regulatorik",itreg:"IT-Regulatorik",ki:"KI/GenAI",digital:"Digitalisierung",vertrieb:"Vertrieb & Makler",markt:"Markt & Unternehmen",personal:"Personalien",insurtech:"InsurTech",produkte:"Produkte & Tarife",schaden:"Schaden & NatCat",esg:"ESG",recht:"Recht & Urteile",kapitalanlage:"Kapitalanlage & Aktuariat"};
 const BLOECKE=[["aufsicht","Aufsicht & Regulatorik"],["itki","IT-Regulatorik, KI & Digitalisierung"],["markt","Markt & Unternehmen"],["vertrieb","Vertrieb & Produkte"],["schaden","Schaden & NatCat"],["intl","International"]];
@@ -390,11 +416,87 @@ function openHow(a){
     <h3>Beobachtete Quellen <span style="font-weight:400;color:var(--muted);font-size:13px">– heute in der Ausgabe vertreten: ${heute.size} (hervorgehoben)</span></h3>
     ${gruppen.filter(([,qs])=>qs.length).map(([t,qs])=>`<div class="qgroup"><p>${esc(t)}</p><div class="qchips">${qs.map(chip).join("")}</div></div>`).join("")}
     <p class="how-note how-lock">${pwCircle()}<span>Schloss-Symbol: Der Originalartikel ist nur mit Abo vollständig lesbar.</span></p>
+    ${ZAEHLER_URL?`<p class="how-note">Wir zählen anonym, wie oft das Dashboard täglich geöffnet wird – ohne Cookies und ohne Rückschluss auf Personen.</p>`:""}
     <p class="how-note">Viele Quellen veröffentlichen nicht täglich (z.&nbsp;B. EIOPA, Ratingagenturen, Datenschutzbehörden). Auswahl und Zusammenfassungen sind KI-gestützt erstellt; maßgeblich ist immer die verlinkte Originalquelle.</p>`;
   const d=$("how");if(d.showModal)d.showModal();else d.setAttribute("open","");
 }
 $("how-close").onclick=()=>$("how").close();
 $("how").addEventListener("click",e=>{if(e.target===$("how"))$("how").close()});
+/* ---------- Nutzungszaehler: nur Datum -> Anzahl; keine Kennung, kein Cookie. Fehler werden ignoriert. ---------- */
+const ZT_KEY="3a-zaehler-tag",ZA_KEY="3a-zaehler-admin";
+let gezaehlt=false;
+const berlinHeute=()=>new Intl.DateTimeFormat("sv-SE",{timeZone:"Europe/Berlin"}).format(new Date());
+function zaehlen(){
+  if(!ZAEHLER_URL||gezaehlt)return;gezaehlt=true;
+  try{
+    const t=berlinHeute(),neu=ls.get(ZT_KEY,null)!==t;if(neu)ls.set(ZT_KEY,t);
+    fetch(ZAEHLER_URL+"/z",{method:"POST",body:JSON.stringify({neu}),headers:{"Content-Type":"text/plain"},
+      credentials:"omit",referrerPolicy:"no-referrer",cache:"no-store",keepalive:true}).catch(()=>{});
+  }catch(e){}
+}
+const ss={get(k){try{return sessionStorage.getItem(k)}catch(e){return null}},set(k,v){try{sessionStorage.setItem(k,v)}catch(e){}},del(k){try{sessionStorage.removeItem(k)}catch(e){}}};
+const plusTage=(d,n)=>{const t=new Date(d+"T12:00:00Z");t.setUTCDate(t.getUTCDate()+n);return t.toISOString().slice(0,10)};
+const wtag=d=>new Date(d+"T12:00:00Z").getUTCDay();
+const zahl=(x,st=0)=>Number(x).toLocaleString("de-DE",{minimumFractionDigits:st,maximumFractionDigits:st});
+function statForm(msg){
+  $("stat-body").innerHTML=ZAEHLER_URL?`<form class="stat-form" id="stat-form"><label for="stat-key">Admin-Schlüssel</label>
+    <input class="field" id="stat-key" type="password" autocomplete="off" required>
+    <button class="rbtn" type="submit">Anzeigen</button><p class="stat-err" role="alert">${esc(msg||"")}</p>
+    <p class="how-note" style="margin-top:0">Der Schlüssel bleibt nur bis zum Schließen dieses Tabs im Browser.</p></form>`
+    :`<p>Der Nutzungszähler ist nicht eingerichtet (<code>ZAEHLER_URL</code> ist leer).</p>`;
+  const f=$("stat-form");if(f){f.onsubmit=e=>{e.preventDefault();const k=$("stat-key").value.trim();if(k){ss.set(ZA_KEY,k);ladeStat()}};setTimeout(()=>$("stat-key")?.focus(),0)}
+}
+async function ladeStat(){
+  const k=ss.get(ZA_KEY);if(!ZAEHLER_URL||!k)return statForm();
+  $("stat-body").innerHTML=`<p>Lädt …</p>`;
+  try{
+    const r=await fetch(ZAEHLER_URL+"/statistik",{headers:{Authorization:"Bearer "+k},credentials:"omit",referrerPolicy:"no-referrer",cache:"no-store"});
+    if(r.status===401){ss.del(ZA_KEY);return statForm("Der Schlüssel stimmt nicht.")}
+    if(!r.ok)throw new Error(r.status);
+    zeigeStat(await r.json());
+  }catch(e){statForm("Der Zähler ist gerade nicht erreichbar.")}
+}
+function zeigeStat(j){
+  const h=j.heute,gest=plusTage(h,-1),M={};for(const t of j.tage||[])M[t.datum]=t;
+  const g=d=>M[d]?.geraete||0,a=d=>M[d]?.aufrufe||0,werktag=d=>{const w=wtag(d);return w>0&&w<6};
+  const vier=[];for(let i=28;i>=1;i--){const d=plusTage(h,-i);if(werktag(d))vier.push(d)}
+  const avg=f=>vier.length?vier.reduce((s,d)=>s+f(d),0)/vier.length:0;
+  const tage=[];for(let i=29;i>=0;i--){const d=plusTage(h,-i);if(werktag(d))tage.push(d)}
+  const max=Math.max(1,...tage.map(g)),stufe=max<=5?1:max<=10?2:max<=25?5:max<=50?10:Math.ceil(max/5/10)*10,ymax=Math.ceil(max/stufe)*stufe;
+  const W=720,H=220,L=34,R=8,T=12,B=30,bw=(W-L-R)/tage.length,bar=Math.max(4,Math.min(bw*0.62,26)),y=v=>T+(H-T-B)*(1-v/ymax);
+  let svg=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Geräte pro Werktag, letzte 30 Tage">`;
+  for(let v=0;v<=ymax;v+=stufe)svg+=`<line class="grid" x1="${L}" x2="${W-R}" y1="${y(v)}" y2="${y(v)}"/><text x="${L-6}" y="${y(v)+4}" text-anchor="end">${v}</text>`;
+  tage.forEach((d,i)=>{
+    const x=L+i*bw+(bw-bar)/2,v=g(d),top=y(v),hb=H-B-top,r=Math.min(4,bar/2,hb);
+    const pfad=hb>0?`M${x},${H-B}V${top+r}Q${x},${top} ${x+r},${top}H${x+bar-r}Q${x+bar},${top} ${x+bar},${top+r}V${H-B}Z`:"";
+    const tip=`${fmtDate(d)}: ${v} Geräte, ${a(d)} Aufrufe${d===h?" (heute, läuft noch)":""}`;
+    svg+=`<g><rect class="hit" x="${L+i*bw}" y="${T}" width="${bw}" height="${H-B-T}" fill="transparent" tabindex="0"><title>${esc(tip)}</title></rect>`+
+         (pfad?`<path class="bar${d===h?" heute":""}" d="${pfad}" pointer-events="none"/>`:"")+`</g>`;
+    if(wtag(d)===1||d===h)svg+=`<text x="${L+i*bw+bw/2}" y="${H-B+16}" text-anchor="middle">${d===h?"heute":ddmm(d)}</text>`;
+  });
+  svg+=`</svg>`;
+  const kachel=(v,t,u)=>`<div class="st"><b>${v}</b><span>${t}</span>${u?`<small>${u}</small>`:""}</div>`;
+  $("stat-body").innerHTML=`
+    <div class="stat-tiles">
+      ${kachel(zahl(g(h)),"Geräte heute","bisher")}${kachel(zahl(g(gest)),"Geräte gestern",esc(fmtDate(gest)))}${kachel(zahl(avg(g),1),"Ø Geräte Mo–Fr","letzte 4 Wochen")}
+      ${kachel(zahl(a(h)),"Aufrufe heute","bisher")}${kachel(zahl(a(gest)),"Aufrufe gestern",esc(fmtDate(gest)))}${kachel(zahl(avg(a),1),"Ø Aufrufe Mo–Fr","letzte 4 Wochen")}
+    </div>
+    <h3>Geräte pro Werktag – letzte 30 Tage</h3>
+    <div class="stat-chart">${svg}</div>
+    <details><summary>Als Tabelle</summary><table class="stat-table"><thead><tr><th>Tag</th><th>Geräte</th><th>Aufrufe</th></tr></thead><tbody>
+      ${tage.slice().reverse().map(d=>`<tr><td>${esc(fmtDate(d))}</td><td>${g(d)}</td><td>${a(d)}</td></tr>`).join("")}</tbody></table></details>
+    <p class="how-note">Geräte = Geräte mit mindestens einem Aufruf am Tag (nicht Personen). Gespeichert werden nur Tageszahlen.
+      <button class="rbtn" id="stat-aus" type="button" style="margin-left:8px">Schlüssel vergessen</button></p>`;
+  $("stat-aus").onclick=()=>{ss.del(ZA_KEY);statForm()};
+}
+function oeffneStat(){const d=$("stat");if(!d.open){if(d.showModal)d.showModal();else d.setAttribute("open","")}ladeStat()}
+function schliesseStat(){const d=$("stat");if(d.open)d.close()}
+$("stat-close").onclick=schliesseStat;
+$("stat").addEventListener("click",e=>{if(e.target===$("stat"))schliesseStat()});
+$("stat").addEventListener("close",()=>{if(location.hash==="#statistik")history.replaceState(null,"",location.pathname+location.search)});
+window.addEventListener("hashchange",()=>{if(location.hash==="#statistik")oeffneStat()});
+if(location.hash==="#statistik")setTimeout(oeffneStat,0);
+
 function current(){return state.ausgaben.find(x=>x.datum===state.datum)||state.ausgaben[0]}
 function heroStats(){
   const a=current();
@@ -535,7 +637,7 @@ async function unlock(pw,remember){
   try{await dec(key,meta.check)}catch(e){if(!pw)ls.del("3a-team-key");return false}
   KEY=key;
   if(pw&&remember){const raw=new Uint8Array(await crypto.subtle.exportKey("raw",key));ls.set("3a-team-key",btoa(String.fromCharCode(...raw)))}
-  $("lock").hidden=true;await loadData();return true;
+  $("lock").hidden=true;zaehlen();await loadData();return true;
 }
 $("lockform").onsubmit=async e=>{e.preventDefault();$("lockerr").textContent="Wird geöffnet …";$("unlock").disabled=true;
   try{const ok=await unlock($("pw").value,$("remember").checked);$("lockerr").textContent=ok?"":"Das Passwort stimmt nicht. Bitte erneut versuchen."}
