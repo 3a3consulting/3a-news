@@ -136,6 +136,7 @@ section{display:flex;flex-direction:column;gap:14px}
 .pwcol{width:26px;padding-top:1px}
 .pw{display:flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:50%;background:#F0F0F0;color:#6B6B6B}
 .pwmini{display:inline-flex;vertical-align:-1px;margin-left:3px;color:#6B6B6B}
+.pwtop{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;background:#FFFFFF;color:#6B6B6B;vertical-align:middle;margin:-4px 0 -4px 6px;cursor:help}
 .how-lock{display:flex;align-items:center;gap:8px}
 .item h4{margin:0;font-weight:600;font-size:15.5px;line-height:1.35;overflow-wrap:break-word;hyphens:auto}
 .item p{margin:0;max-width:80ch}
@@ -353,6 +354,8 @@ const firmBtns=m=>firmsOf(m).map(u=>`<span style="white-space:nowrap"><button cl
 const LOCK=px=>`<svg width="${px}" height="${px}" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M5.2 7V5.3a2.8 2.8 0 0 1 5.6 0V7" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><rect x="3.6" y="7" width="8.8" height="6.6" rx="1.4" fill="currentColor"/></svg>`;
 const PW_TXT="Paywall: Der Originalartikel ist nur mit Abo vollständig lesbar.";
 const pwCircle=()=>`<span class="pw" role="img" aria-label="${PW_TXT}" title="${PW_TXT}">${LOCK(13)}</span>`;
+const PW_TOP="Artikel liegt hinter einer Paywall";
+const pwTop=on=>on===true?`<span class="pwtop" role="img" aria-label="${PW_TOP}" title="${PW_TOP}">${LOCK(14)}</span>`:"";
 const pwMini=on=>on===true?`<span class="pwmini" role="img" aria-label="${PW_TXT}" title="${PW_TXT}">${LOCK(11)}</span>`:"";
 
 function itemHTML(m){
@@ -424,7 +427,7 @@ function renderAusgabe(){
   const a=current();if(!a)return emptyHTML();
   const all=a.meldungen||[];const list=all.filter(matches);const tops=all.filter(m=>m.top);
   let h=filterBar(all.filter(m=>!m.top).length-list.filter(m=>!m.top).length);
-  if(tops.length)h+=`<section><div class="sechead"><h2>Top-Themen</h2><span class="meta">${esc(fmtDate(a.datum))}</span></div><div class="tops">${tops.map(m=>`<article class="topcard${READ.has(m.id)?" read":""}${isFav(m)?" isfav":""}"><span class="kicker">${isFav(m)?`<span class="favmark">★ Meine Unternehmen</span> `:""}${esc(THEMEN[(m.themen||[])[0]]||"")}</span><h3><a href="${esc(m.link)}" target="_blank" rel="noopener" data-open="${esc(m.id)}">${esc(m.titel)}</a></h3>${m.zusammenfassung?`<p>${esc(m.zusammenfassung)}</p>`:""}<div class="tags"><span class="src">${esc(m.quelle)}${pwMini(m.paywall)}</span>${firmBtns(m)}</div></article>`).join("")}</div></section>`;
+  if(tops.length)h+=`<section><div class="sechead"><h2>Top-Themen</h2><span class="meta">${esc(fmtDate(a.datum))}</span></div><div class="tops">${tops.map(m=>`<article class="topcard${READ.has(m.id)?" read":""}${isFav(m)?" isfav":""}"><span class="kicker">${isFav(m)?`<span class="favmark">★ Meine Unternehmen</span> `:""}${esc(THEMEN[(m.themen||[])[0]]||"")}</span><h3><a href="${esc(m.link)}" target="_blank" rel="noopener" data-open="${esc(m.id)}">${esc(m.titel)}</a></h3>${m.zusammenfassung?`<p>${esc(m.zusammenfassung)}</p>`:""}<div class="tags"><span class="src">${esc(m.quelle)}${pwTop(m.paywall)}</span>${firmBtns(m)}</div></article>`).join("")}</div></section>`;
   h+=favBox();
   const rest=list.filter(m=>!m.top);const restAll=all.filter(m=>!m.top);
   const unread=list.filter(m=>!READ.has(m.id)).length;
