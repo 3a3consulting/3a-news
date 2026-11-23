@@ -329,7 +329,7 @@ footer::before{content:"3A";position:absolute;left:0;top:14px;background:var(--r
 </div>
 
 <script>
-/* Nutzungszaehler (anonym, nur Tageszahlen; Einrichtung: 3a-news-redaktion/zaehler/README.md).
+/* Nutzungszaehler (anonym, nur Aufrufe je Tag, nichts auf dem Geraet; Einrichtung: 3a-news-redaktion/zaehler/README.md).
    Adresse des Cloudflare-Workers ohne "/" am Ende, z. B. "https://3a-news-zaehler.<konto>.workers.dev".
    Leer = Zaehler aus: es wird nichts gesendet. */
 const ZAEHLER_URL="";
@@ -431,16 +431,13 @@ function openHow(a){
 }
 $("how-close").onclick=()=>$("how").close();
 $("how").addEventListener("click",e=>{if(e.target===$("how"))$("how").close()});
-/* ---------- Nutzungszaehler: nur Datum -> Anzahl; keine Kennung, kein Cookie. Fehler werden ignoriert. ---------- */
-const ZT_KEY="3a-zaehler-tag",ZA_KEY="3a-zaehler-admin";
+/* ---------- Nutzungszaehler: nur Aufrufe je Tag; keine Kennung, kein Cookie, nichts auf dem Geraet. Fehler werden ignoriert. ---------- */
+const ZA_KEY="3a-zaehler-admin";
 let gezaehlt=false;
-const berlinHeute=()=>new Intl.DateTimeFormat("sv-SE",{timeZone:"Europe/Berlin"}).format(new Date());
 function zaehlen(){
   if(!ZAEHLER_URL||gezaehlt)return;gezaehlt=true;
   try{
-    const t=berlinHeute(),neu=ls.get(ZT_KEY,null)!==t;if(neu)ls.set(ZT_KEY,t);
-    fetch(ZAEHLER_URL+"/z",{method:"POST",body:JSON.stringify({neu}),headers:{"Content-Type":"text/plain"},
-      credentials:"omit",referrerPolicy:"no-referrer",cache:"no-store",keepalive:true}).catch(()=>{});
+    fetch(ZAEHLER_URL+"/z",{method:"POST",credentials:"omit",referrerPolicy:"no-referrer",cache:"no-store",keepalive:true}).catch(()=>{});
   }catch(e){}
 }
 const ss={get(k){try{return sessionStorage.getItem(k)}catch(e){return null}},set(k,v){try{sessionStorage.setItem(k,v)}catch(e){}},del(k){try{sessionStorage.removeItem(k)}catch(e){}}};
@@ -467,18 +464,18 @@ async function ladeStat(){
 }
 function zeigeStat(j){
   const h=j.heute,gest=plusTage(h,-1),M={};for(const t of j.tage||[])M[t.datum]=t;
-  const g=d=>M[d]?.geraete||0,a=d=>M[d]?.aufrufe||0,werktag=d=>{const w=wtag(d);return w>0&&w<6};
+  const a=d=>M[d]?.aufrufe||0,werktag=d=>{const w=wtag(d);return w>0&&w<6};
   const vier=[];for(let i=28;i>=1;i--){const d=plusTage(h,-i);if(werktag(d))vier.push(d)}
   const avg=f=>vier.length?vier.reduce((s,d)=>s+f(d),0)/vier.length:0;
   const tage=[];for(let i=29;i>=0;i--){const d=plusTage(h,-i);if(werktag(d))tage.push(d)}
-  const max=Math.max(1,...tage.map(g)),stufe=max<=5?1:max<=10?2:max<=25?5:max<=50?10:Math.ceil(max/5/10)*10,ymax=Math.ceil(max/stufe)*stufe;
+  const max=Math.max(1,...tage.map(a)),stufe=max<=5?1:max<=10?2:max<=25?5:max<=50?10:Math.ceil(max/5/10)*10,ymax=Math.ceil(max/stufe)*stufe;
   const W=720,H=220,L=34,R=8,T=12,B=30,bw=(W-L-R)/tage.length,bar=Math.max(4,Math.min(bw*0.62,26)),y=v=>T+(H-T-B)*(1-v/ymax);
-  let svg=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Geräte pro Werktag, letzte 30 Tage">`;
+  let svg=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Aufrufe pro Werktag, letzte 30 Tage">`;
   for(let v=0;v<=ymax;v+=stufe)svg+=`<line class="grid" x1="${L}" x2="${W-R}" y1="${y(v)}" y2="${y(v)}"/><text x="${L-6}" y="${y(v)+4}" text-anchor="end">${v}</text>`;
   tage.forEach((d,i)=>{
-    const x=L+i*bw+(bw-bar)/2,v=g(d),top=y(v),hb=H-B-top,r=Math.min(4,bar/2,hb);
+    const x=L+i*bw+(bw-bar)/2,v=a(d),top=y(v),hb=H-B-top,r=Math.min(4,bar/2,hb);
     const pfad=hb>0?`M${x},${H-B}V${top+r}Q${x},${top} ${x+r},${top}H${x+bar-r}Q${x+bar},${top} ${x+bar},${top+r}V${H-B}Z`:"";
-    const tip=`${fmtDate(d)}: ${v} Geräte, ${a(d)} Aufrufe${d===h?" (heute, läuft noch)":""}`;
+    const tip=`${fmtDate(d)}: ${v} Aufrufe${d===h?" (heute, läuft noch)":""}`;
     svg+=`<g><rect class="hit" x="${L+i*bw}" y="${T}" width="${bw}" height="${H-B-T}" fill="transparent" tabindex="0"><title>${esc(tip)}</title></rect>`+
          (pfad?`<path class="bar${d===h?" heute":""}" d="${pfad}" pointer-events="none"/>`:"")+`</g>`;
     if(wtag(d)===1||d===h)svg+=`<text x="${L+i*bw+bw/2}" y="${H-B+16}" text-anchor="middle">${d===h?"heute":ddmm(d)}</text>`;
@@ -487,14 +484,13 @@ function zeigeStat(j){
   const kachel=(v,t,u)=>`<div class="st"><b>${v}</b><span>${t}</span>${u?`<small>${u}</small>`:""}</div>`;
   $("stat-body").innerHTML=`
     <div class="stat-tiles">
-      ${kachel(zahl(g(h)),"Geräte heute","bisher")}${kachel(zahl(g(gest)),"Geräte gestern",esc(fmtDate(gest)))}${kachel(zahl(avg(g),1),"Ø Geräte Mo–Fr","letzte 4 Wochen")}
       ${kachel(zahl(a(h)),"Aufrufe heute","bisher")}${kachel(zahl(a(gest)),"Aufrufe gestern",esc(fmtDate(gest)))}${kachel(zahl(avg(a),1),"Ø Aufrufe Mo–Fr","letzte 4 Wochen")}
     </div>
-    <h3>Geräte pro Werktag – letzte 30 Tage</h3>
+    <h3>Aufrufe pro Werktag – letzte 30 Tage</h3>
     <div class="stat-chart">${svg}</div>
-    <details><summary>Als Tabelle</summary><table class="stat-table"><thead><tr><th>Tag</th><th>Geräte</th><th>Aufrufe</th></tr></thead><tbody>
-      ${tage.slice().reverse().map(d=>`<tr><td>${esc(fmtDate(d))}</td><td>${g(d)}</td><td>${a(d)}</td></tr>`).join("")}</tbody></table></details>
-    <p class="how-note">Geräte = Geräte mit mindestens einem Aufruf am Tag (nicht Personen). Gespeichert werden nur Tageszahlen.
+    <details><summary>Als Tabelle</summary><table class="stat-table"><thead><tr><th>Tag</th><th>Aufrufe</th></tr></thead><tbody>
+      ${tage.slice().reverse().map(d=>`<tr><td>${esc(fmtDate(d))}</td><td>${a(d)}</td></tr>`).join("")}</tbody></table></details>
+    <p class="how-note">Gezählt wird jedes Öffnen des Dashboards (nicht Personen oder Geräte). Gespeichert werden nur Tageszahlen.
       <button class="rbtn" id="stat-aus" type="button" style="margin-left:8px">Schlüssel vergessen</button></p>`;
   $("stat-aus").onclick=()=>{ss.del(ZA_KEY);statForm()};
 }
